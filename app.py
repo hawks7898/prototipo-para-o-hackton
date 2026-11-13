@@ -1,10 +1,182 @@
+import hashlib
+import json
 import math
+import os
 import random
+import re
+import secrets
+import smtplib
+import time
+from email.message import EmailMessage
+from pathlib import Path
 
 import pandas as pd
+import requests
 import streamlit as st
 
 st.set_page_config(page_title="PreçoCerto IA", page_icon="🛒", layout="wide")
+
+# ------------------------------------------------------------------
+# CONTAS DE USUÁRIO (protótipo: arquivo local usuarios.json)
+# ------------------------------------------------------------------
+ARQ_USUARIOS = Path(__file__).parent / "usuarios.json"
+VALIDADE_CODIGO_SEG = 600  # 10 minutos
+MAX_TENTATIVAS = 5
+
+
+def carregar_usuarios():
+    if ARQ_USUARIOS.exists():
+        try:
+            return json.loads(ARQ_USUARIOS.read_text(encoding="utf-8"))
+        except Exception:
+            return {}
+    return {}
+
+
+def salvar_usuarios(usuarios):
+    ARQ_USUARIOS.write_text(json.dumps(usuarios, indent=2, ensure_ascii=False), encoding="utf-8")
+
+
+def hash_senha(senha, salt=None):
+    salt = salt or secrets.token_hex(16)
+    h = hashlib.pbkdf2_hmac("sha256", senha.encode(), bytes.fromhex(salt), 200_000).hex()
+    return salt, h
+
+
+def email_valido(email):
+    return re.fullmatch(r"[^@\s]+@[^@\s]+\.[^@\s]+", email) is not None
+
+
+def smtp_configurado():
+    return all(os.environ.get(k) for k in ("SMTP_HOST", "SMTP_USER", "SMTP_PASS"))
+
+
+def enviar_codigo(email, codigo):
+    """Envia o código por e-mail. Retorna (ok, mensagem_de_erro)."""
+    msg = EmailMessage()
+    msg["Subject"] = "Seu código de verificação - PreçoCerto IA"
+    msg["From"] = os.environ["SMTP_USER"]
+    msg["To"] = email
+    msg.set_content(
+        f"Olá!\n\nSeu código de verificação é: {codigo}\n\n"
+        "Ele vale por 10 minutos. Se você não pediu, ignore este e-mail."
+    )
+    try:
+        porta = int(os.environ.get("SMTP_PORT", "587"))
+        with smtplib.SMTP(os.environ["SMTP_HOST"], porta, timeout=15) as s:
+            s.starttls()
+            s.login(os.environ["SMTP_USER"], os.environ["SMTP_PASS"])
+            s.send_message(msg)
+        return True, ""
+    except Exception as e:
+        return False, str(e)
+
+
+def reiniciar_cadastro():
+    st.session_state.cadastro = {"etapa": 1, "email": "", "codigo": "", "expira": 0,
+                                 "tentativas": 0, "demo": False, "aviso": ""}
+
+
+def tela_acesso():
+    st.title("🛒 PreçoCerto")
+    st.caption("Entre ou crie sua conta para continuar")
+
+    if "cadastro" not in st.session_state:
+        reiniciar_cadastro()
+    c = st.session_state.cadastro
+
+    aba_login, aba_cadastro = st.tabs(["🔑 Entrar", "📝 Criar conta"])
+
+    # ---------------- LOGIN ----------------
+    with aba_login:
+        email = st.text_input("E-mail", key="login_email").strip().lower()
+        senha = st.text_input("Senha", type="password", key="login_senha")
+        if st.button("Entrar", type="primary"):
+            usuarios = carregar_usuarios()
+            u = usuarios.get(email)
+            if u and hash_senha(senha, u["salt"])[1] == u["hash"]:
+                st.session_state.usuario = email
+                st.rerun()
+            else:
+                st.error("E-mail ou senha incorretos.")
+
+    # ---------------- CADASTRO ----------------
+    with aba_cadastro:
+        if c["aviso"]:
+            st.success(c["aviso"])
+
+        # Etapa 1: e-mail
+        if c["etapa"] == 1:
+            email = st.text_input("Seu e-mail", key="cad_email").strip().lower()
+            if st.button("Enviar código", type="primary"):
+                if not email_valido(email):
+                    st.error("Digite um e-mail válido.")
+                elif email in carregar_usuarios():
+                    st.error("Esse e-mail já tem conta. Use a aba Entrar.")
+                else:
+                    codigo = f"{secrets.randbelow(10**6):06d}"
+                    c.update(email=email, codigo=codigo, tentativas=0,
+                             expira=time.time() + VALIDADE_CODIGO_SEG, aviso="")
+                    if smtp_configurado():
+                        with st.spinner("Enviando e-mail..."):
+                            ok, erro = enviar_codigo(email, codigo)
+                        if not ok:
+                            st.error(f"Não consegui enviar o e-mail: {erro}")
+                            st.stop()
+                        c["demo"] = False
+                        c["aviso"] = f"Código enviado para {email}. Confira também o spam."
+                    else:
+                        c["demo"] = True
+                        c["aviso"] = "Código gerado (modo demonstração)."
+                    c["etapa"] = 2
+                    st.rerun()
+
+        # Etapa 2: código
+        elif c["etapa"] == 2:
+            st.write(f"Código enviado para **{c['email']}**")
+            if c["demo"]:
+                st.info(f"🧪 Modo demonstração: o e-mail não foi enviado porque o SMTP não está "
+                        f"configurado. Seu código é **{c['codigo']}**.")
+            digitado = st.text_input("Código de 6 dígitos", max_chars=6, key="cad_codigo").strip()
+            col1, col2 = st.columns(2)
+            if col1.button("Verificar", type="primary"):
+                if time.time() > c["expira"]:
+                    st.error("Código expirado. Volte e peça outro.")
+                elif c["tentativas"] >= MAX_TENTATIVAS:
+                    st.error("Muitas tentativas. Volte e peça outro código.")
+                elif digitado == c["codigo"]:
+                    c["etapa"], c["aviso"] = 3, "E-mail verificado! Agora crie sua senha."
+                    st.rerun()
+                else:
+                    c["tentativas"] += 1
+                    st.error(f"Código incorreto ({c['tentativas']}/{MAX_TENTATIVAS}).")
+            if col2.button("← Voltar"):
+                reiniciar_cadastro()
+                st.rerun()
+
+        # Etapa 3: senha
+        elif c["etapa"] == 3:
+            s1 = st.text_input("Crie uma senha (mín. 6 caracteres)", type="password", key="cad_s1")
+            s2 = st.text_input("Repita a senha", type="password", key="cad_s2")
+            if st.button("Criar conta", type="primary"):
+                if len(s1) < 6:
+                    st.error("A senha precisa ter pelo menos 6 caracteres.")
+                elif s1 != s2:
+                    st.error("As senhas não conferem.")
+                else:
+                    usuarios = carregar_usuarios()
+                    salt, h = hash_senha(s1)
+                    usuarios[c["email"]] = {"salt": salt, "hash": h,
+                                            "criado_em": time.strftime("%Y-%m-%d %H:%M:%S")}
+                    salvar_usuarios(usuarios)
+                    st.session_state.usuario = c["email"]
+                    reiniciar_cadastro()
+                    st.rerun()
+
+
+if "usuario" not in st.session_state:
+    tela_acesso()
+    st.stop()
 
 # ------------------------------------------------------------------
 # DADOS SIMULADOS (protótipo). Na versão final, virão de uma IA que
@@ -65,6 +237,24 @@ def distancia_km(a, b):
     return 2 * 6371 * math.asin(math.sqrt(h)) * 1.3
 
 
+@st.cache_data(show_spinner=False)
+def geocodificar(endereco):
+    """Converte um endereço em coordenadas (OpenStreetMap/Nominatim). Precisa de internet."""
+    try:
+        r = requests.get(
+            "https://nominatim.openstreetmap.org/search",
+            params={"q": f"{endereco}, Piracicaba, SP, Brasil", "format": "json", "limit": 1},
+            headers={"User-Agent": "PrecoCertoIA-prototipo/1.0"},
+            timeout=8,
+        )
+        dados = r.json()
+        if dados:
+            return float(dados[0]["lat"]), float(dados[0]["lon"]), dados[0]["display_name"]
+    except Exception:
+        pass
+    return None
+
+
 def brl(v):
     return f"R$ {v:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
 
@@ -72,10 +262,17 @@ def brl(v):
 # ------------------------------------------------------------------
 # FUNÇÃO 0: PREFERÊNCIAS
 # ------------------------------------------------------------------
-st.title("🛒 PreçoCerto IA")
+st.title("🛒 PreçoCerto")
 st.caption("Protótipo • Pesquisa e comparação de preços com custo total real • Dados simulados")
 
 with st.sidebar:
+    st.write(f"👤 {st.session_state.usuario}")
+    if st.button("Sair"):
+        del st.session_state["usuario"]
+        st.session_state.pop("pesquisou", None)
+        st.rerun()
+    st.divider()
+
     st.header("⚙️ Preferências")
     cidade = st.selectbox("Localização *", ["Piracicaba - SP"])
     modalidade = st.radio("Modalidade de compra",
@@ -84,7 +281,25 @@ with st.sidebar:
     preferidos = st.multiselect("Estabelecimentos preferenciais (vazio = todos)",
                                 [l["nome"] for l in LOJAS])
     st.divider()
-    origem = st.selectbox("Endereço de origem (bairro)", list(BAIRROS), index=0)
+
+    st.subheader("📍 Endereço de origem")
+    modo_origem = st.radio("Informar por", ["Bairro", "Endereço completo"], horizontal=True)
+    if modo_origem == "Bairro":
+        bairro = st.selectbox("Bairro", list(BAIRROS))
+        origem_coord, origem_label = BAIRROS[bairro], bairro
+    else:
+        endereco = st.text_input("Rua, número e bairro", placeholder="Ex.: Rua Governador Pedro de Toledo, 1000")
+        origem_coord, origem_label = BAIRROS["Centro"], "Centro (padrão)"
+        if endereco.strip():
+            with st.spinner("Localizando endereço..."):
+                achado = geocodificar(endereco.strip())
+            if achado:
+                origem_coord, origem_label = achado[:2], endereco.strip()
+                st.caption(f"✅ Encontrado: {achado[2]}")
+            else:
+                st.warning("Não encontrei esse endereço (ou está sem internet). "
+                           "Usando o Centro como origem.")
+
     combustivel = st.number_input("Preço do combustível (R$/L)", 3.0, 10.0, 6.20, 0.10)
     consumo = st.number_input("Consumo do veículo (km/L)", 3.0, 30.0, 11.0, 0.5)
 
@@ -93,7 +308,7 @@ with st.sidebar:
 # ------------------------------------------------------------------
 st.subheader("1️⃣ O que você precisa comprar?")
 escolhidos = st.multiselect("Produtos", list(PRODUTOS),
-                            default=["Arroz 5 kg", "Feijão carioca 1 kg", "Óleo de soja 900 ml"])
+                            default=["Arroz 5 kg", ])
 
 quantidades = {}
 if escolhidos:
@@ -101,16 +316,15 @@ if escolhidos:
     for i, p in enumerate(escolhidos):
         quantidades[p] = cols[i % len(cols)].number_input(p, 1, 500, 10, key=f"q_{p}")
 
-buscar = st.button("🔎 Pesquisar com IA", type="primary", disabled=not escolhidos)
+buscar = st.button("🔎 Pesquisar", type="primary", disabled=not escolhidos)
 
 if buscar:
     with st.spinner("A IA está pesquisando preços em Piracicaba..."):
-        import time
         time.sleep(1.5)
     st.session_state["pesquisou"] = True
 
 if not st.session_state.get("pesquisou") or not escolhidos:
-    st.info("Escolha os produtos, ajuste as preferências e clique em **Pesquisar com IA**.")
+    st.info("Escolha os produtos, ajuste as preferências e clique em **Pesquisar**.")
     st.stop()
 
 # ------------------------------------------------------------------
@@ -120,7 +334,7 @@ lojas = [l for l in LOJAS if not preferidos or l["nome"] in preferidos]
 linhas = []
 for l in lojas:
     subtotal = sum(preco(l, p) * q for p, q in quantidades.items())
-    dist = distancia_km(BAIRROS[origem], BAIRROS[l["bairro"]])
+    dist = distancia_km(origem_coord, BAIRROS[l["bairro"]])
     gasto_desloc = (dist * 2 / consumo) * combustivel  # ida e volta
     taxa = 0.0 if subtotal >= l["gratis_acima"] > 0 else l["taxa"]
 
@@ -166,7 +380,7 @@ with aba1:
         st.dataframe(pd.DataFrame(tabela), use_container_width=True)
 
 with aba2:
-    st.caption(f"Distância a partir de **{origem}** (ida e volta no gasto).")
+    st.caption(f"Distância a partir de **{origem_label}** (ida e volta no gasto).")
     d = df.sort_values("Distância (km)").head(n_resultados)
     st.dataframe(pd.DataFrame({
         "Estabelecimento": d["Estabelecimento"],
