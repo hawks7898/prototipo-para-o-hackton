@@ -72,13 +72,33 @@ def enviar_codigo(email, codigo):
         return False, str(e)
 
 
+# ---- Produtos pré-configurados (receitas) de cada usuário ----
+def obter_produtos(email):
+    return carregar_usuarios().get(email, {}).get("produtos", {})
+
+
+def salvar_produto(email, nome, receita):
+    usuarios = carregar_usuarios()
+    if email not in usuarios:
+        return
+    usuarios[email].setdefault("produtos", {})[nome] = receita
+    salvar_usuarios(usuarios)
+
+
+def excluir_produto(email, nome):
+    usuarios = carregar_usuarios()
+    if email in usuarios and nome in usuarios[email].get("produtos", {}):
+        del usuarios[email]["produtos"][nome]
+        salvar_usuarios(usuarios)
+
+
 def reiniciar_cadastro():
     st.session_state.cadastro = {"etapa": 1, "email": "", "codigo": "", "expira": 0,
                                  "tentativas": 0, "demo": False, "aviso": ""}
 
 
 def tela_acesso():
-    st.title("🛒 PreçoCerto")
+    st.title("🛒 PreçoCerto IA")
     st.caption("Entre ou crie sua conta para continuar")
 
     if "cadastro" not in st.session_state:
@@ -191,6 +211,10 @@ PRODUTOS = {
     "Farinha de trigo 1 kg": 5.20,
     "Leite 1 L": 4.80,
     "Macarrão 500 g": 4.20,
+    "Ovos (dúzia)": 12.50,
+    "Fermento em pó 100 g": 5.90,
+    "Chocolate em pó 200 g": 7.90,
+    "Manteiga 200 g": 11.90,
 }
 
 # Coordenadas aproximadas (apenas para cálculo ilustrativo de distância)
@@ -221,6 +245,18 @@ LOJAS = [
     {"nome": "Atacarejo Algodoal", "bairro": "Algodoal", "tipo": "Atacado",
      "fator": 0.92, "entrega": True, "taxa": 18.00, "gratis_acima": 400},
 ]
+
+MODO_AVULSO = "Itens avulsos"
+MODO_FABRICAR = "Insumos para fabricar produtos"
+
+RECEITA_EXEMPLO = {
+    "Farinha de trigo 1 kg": 0.30,
+    "Açúcar 1 kg": 0.25,
+    "Ovos (dúzia)": 0.30,
+    "Leite 1 L": 0.20,
+    "Óleo de soja 900 ml": 0.15,
+    "Fermento em pó 100 g": 0.20,
+}
 
 
 def preco(loja, produto):
@@ -259,10 +295,41 @@ def brl(v):
     return f"R$ {v:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
 
 
+# ---- Callbacks do cadastro de produtos (receitas) ----
+def _salvar_produto_cb():
+    nome = st.session_state.get("novo_nome", "").strip()
+    ings = st.session_state.get("novo_ings", [])
+    if not nome:
+        st.session_state["erro_produto"] = "Dê um nome ao produto."
+        return
+    if not ings:
+        st.session_state["erro_produto"] = "Escolha pelo menos um insumo."
+        return
+    receita = {i: float(st.session_state.get(f"rc_{i}", 0.1)) for i in ings}
+    salvar_produto(st.session_state.usuario, nome, receita)
+    st.session_state["msg_produto"] = f"Produto '{nome}' salvo!"
+    st.session_state["novo_nome"] = ""
+    st.session_state["novo_ings"] = []
+
+
+def _exemplo_cb():
+    salvar_produto(st.session_state.usuario, "Bolo simples (exemplo)", RECEITA_EXEMPLO)
+    st.session_state["msg_produto"] = "Produto de exemplo adicionado!"
+
+
+def _excluir_cb():
+    nome = st.session_state.get("del_prod", "")
+    if nome:
+        excluir_produto(st.session_state.usuario, nome)
+        st.session_state["prod_sel"] = [p for p in st.session_state.get("prod_sel", []) if p != nome]
+        st.session_state["del_prod"] = ""
+        st.session_state["msg_produto"] = f"Produto '{nome}' excluído."
+
+
 # ------------------------------------------------------------------
-# FUNÇÃO 0: PREFERÊNCIAS
+# PREFERÊNCIAS (obrigatórias e opcionais)
 # ------------------------------------------------------------------
-st.title("🛒 PreçoCerto")
+st.title("🛒 PreçoCerto IA")
 st.caption("Protótipo • Pesquisa e comparação de preços com custo total real • Dados simulados")
 
 with st.sidebar:
@@ -274,78 +341,137 @@ with st.sidebar:
     st.divider()
 
     st.header("⚙️ Preferências")
+    st.subheader("Obrigatórias")
     cidade = st.selectbox("Localização *", ["Piracicaba - SP"])
-    modalidade = st.radio("Modalidade de compra",
-                          ["Ambas", "Retirar na loja", "Receber por entrega"])
     n_resultados = st.slider("Quantidade de resultados *", 1, len(LOJAS), 3)
-    preferidos = st.multiselect("Estabelecimentos preferenciais (vazio = todos)",
-                                [l["nome"] for l in LOJAS])
-    st.divider()
 
-    st.subheader("📍 Endereço de origem")
-    modo_origem = st.radio("Informar por", ["Bairro", "Endereço completo"], horizontal=True)
-    if modo_origem == "Bairro":
-        bairro = st.selectbox("Bairro", list(BAIRROS))
-        origem_coord, origem_label = BAIRROS[bairro], bairro
-    else:
-        endereco = st.text_input("Rua, número e bairro", placeholder="Ex.: Rua Governador Pedro de Toledo, 1000")
-        origem_coord, origem_label = BAIRROS["Centro"], "Centro (padrão)"
-        if endereco.strip():
-            with st.spinner("Localizando endereço..."):
-                achado = geocodificar(endereco.strip())
-            if achado:
-                origem_coord, origem_label = achado[:2], endereco.strip()
-                st.caption(f"✅ Encontrado: {achado[2]}")
-            else:
-                st.warning("Não encontrei esse endereço (ou está sem internet). "
-                           "Usando o Centro como origem.")
+    with st.expander("Opcionais", expanded=True):
+        modalidade = st.radio("Modalidade de compra",
+                              ["Ambas", "Retirar na loja", "Receber por entrega"])
+        preferidos = st.multiselect("Estabelecimentos preferenciais (vazio = todos)",
+                                    [l["nome"] for l in LOJAS])
 
-    combustivel = st.number_input("Preço do combustível (R$/L)", 3.0, 10.0, 6.20, 0.10)
-    consumo = st.number_input("Consumo do veículo (km/L)", 3.0, 30.0, 11.0, 0.5)
+        st.markdown("**📍 Endereço de origem**")
+        modo_origem = st.radio("Informar por", ["Bairro", "Endereço completo", "Não informar"],
+                               horizontal=True, label_visibility="collapsed")
+        origem_coord, origem_label = None, "não informada"
+        if modo_origem == "Bairro":
+            bairro = st.selectbox("Bairro", list(BAIRROS))
+            origem_coord, origem_label = BAIRROS[bairro], bairro
+        elif modo_origem == "Endereço completo":
+            endereco = st.text_input("Rua, número e bairro",
+                                     placeholder="Ex.: Rua Governador Pedro de Toledo, 1000")
+            origem_coord, origem_label = BAIRROS["Centro"], "Centro (padrão)"
+            if endereco.strip():
+                with st.spinner("Localizando endereço..."):
+                    achado = geocodificar(endereco.strip())
+                if achado:
+                    origem_coord, origem_label = achado[:2], endereco.strip()
+                    st.caption(f"✅ Encontrado: {achado[2]}")
+                else:
+                    st.warning("Não encontrei esse endereço (ou está sem internet). "
+                               "Usando o Centro como origem.")
+
+        combustivel = st.number_input("Preço do combustível (R$/L)", 3.0, 10.0, 6.20, 0.10)
+        consumo = st.number_input("Consumo do veículo (km/L)", 3.0, 30.0, 11.0, 0.5)
 
 # ------------------------------------------------------------------
-# FUNÇÃO 1: BUSCA POR PREÇOS (seleção de produtos)
+# 1. O QUE COMPRAR (itens avulsos ou insumos de produtos pré-configurados)
 # ------------------------------------------------------------------
 st.subheader("1️⃣ O que você precisa comprar?")
-escolhidos = st.multiselect("Produtos", list(PRODUTOS),
-                            default=["Arroz 5 kg", ])
+modo_lista = st.radio("Tipo de compra", [MODO_AVULSO, MODO_FABRICAR], horizontal=True)
 
 quantidades = {}
-if escolhidos:
-    cols = st.columns(min(len(escolhidos), 4))
-    for i, p in enumerate(escolhidos):
-        quantidades[p] = cols[i % len(cols)].number_input(p, 1, 500, 10, key=f"q_{p}")
+unidades_prod = {}
+meus_produtos = {}
 
-buscar = st.button("🔎 Pesquisar", type="primary", disabled=not escolhidos)
+if modo_lista == MODO_AVULSO:
+    escolhidos = st.multiselect("Produtos", list(PRODUTOS),
+                                default=["Arroz 5 kg", "Feijão carioca 1 kg", "Óleo de soja 900 ml"])
+    if escolhidos:
+        cols = st.columns(min(len(escolhidos), 4))
+        for i, p in enumerate(escolhidos):
+            quantidades[p] = cols[i % len(cols)].number_input(p, 1, 500, 10, key=f"q_{p}")
+else:
+    meus_produtos = obter_produtos(st.session_state.usuario)
+
+    if "erro_produto" in st.session_state:
+        st.error(st.session_state.pop("erro_produto"))
+    if "msg_produto" in st.session_state:
+        st.success(st.session_state.pop("msg_produto"))
+
+    with st.expander("➕ Pré-configurar produto (receita)"):
+        st.text_input("Nome do produto", key="novo_nome", placeholder="Ex.: Bolo de cenoura")
+        ings = st.multiselect("Insumos usados em 1 unidade", list(PRODUTOS), key="novo_ings")
+        for ing in ings:
+            st.number_input(f"{ing}: quantidade por unidade (em embalagens)",
+                            0.001, 100.0, 0.10, 0.05, format="%.3f", key=f"rc_{ing}",
+                            help="Ex.: 0,2 = 1/5 da embalagem para fazer 1 unidade do produto.")
+        st.button("💾 Salvar produto", on_click=_salvar_produto_cb)
+
+        if meus_produtos:
+            st.divider()
+            st.selectbox("Excluir produto", [""] + list(meus_produtos), key="del_prod")
+            st.button("🗑️ Excluir", on_click=_excluir_cb)
+
+    if not meus_produtos:
+        st.info("Você ainda não tem produtos salvos. Crie um acima ou use o exemplo.")
+        st.button("✨ Adicionar produto de exemplo", on_click=_exemplo_cb)
+    else:
+        sel = st.multiselect("Produtos que vou fabricar", list(meus_produtos), key="prod_sel")
+        cols = st.columns(min(max(len(sel), 1), 4))
+        for i, nome in enumerate(sel):
+            unidades_prod[nome] = cols[i % len(cols)].number_input(
+                f"Unidades de {nome}", 1, 10000, 20, key=f"un_{nome}")
+
+        necessidade = {}
+        for nome, un in unidades_prod.items():
+            for ing, q in meus_produtos[nome].items():
+                if ing in PRODUTOS:
+                    necessidade[ing] = necessidade.get(ing, 0) + q * un
+        # embalagens inteiras a comprar (round evita erro de ponto flutuante)
+        quantidades = {ing: max(1, math.ceil(round(q, 6))) for ing, q in necessidade.items()}
+
+        if quantidades:
+            with st.expander("🧾 Lista de compras gerada", expanded=True):
+                st.dataframe(pd.DataFrame({
+                    "Insumo": list(quantidades),
+                    "Necessário (embalagens)": [round(necessidade[i], 2) for i in quantidades],
+                    "Comprar (embalagens)": list(quantidades.values()),
+                }), hide_index=True, use_container_width=True)
+
+buscar = st.button("🔎 Pesquisar com IA", type="primary", disabled=not quantidades)
 
 if buscar:
     with st.spinner("A IA está pesquisando preços em Piracicaba..."):
         time.sleep(1.5)
     st.session_state["pesquisou"] = True
 
-if not st.session_state.get("pesquisou") or not escolhidos:
-    st.info("Escolha os produtos, ajuste as preferências e clique em **Pesquisar**.")
+if not st.session_state.get("pesquisou") or not quantidades:
+    st.info("Escolha o que comprar, ajuste as preferências e clique em **Pesquisar com IA**.")
     st.stop()
 
 # ------------------------------------------------------------------
 # CÁLCULOS
 # ------------------------------------------------------------------
 lojas = [l for l in LOJAS if not preferidos or l["nome"] in preferidos]
+aceita_retirada = modalidade in ("Ambas", "Retirar na loja")
+aceita_entrega = modalidade in ("Ambas", "Receber por entrega")
+
 linhas = []
 for l in lojas:
     subtotal = sum(preco(l, p) * q for p, q in quantidades.items())
-    dist = distancia_km(origem_coord, BAIRROS[l["bairro"]])
-    gasto_desloc = (dist * 2 / consumo) * combustivel  # ida e volta
+    if origem_coord:
+        dist = distancia_km(origem_coord, BAIRROS[l["bairro"]])
+        gasto_desloc = (dist * 2 / consumo) * combustivel  # ida e volta
+    else:
+        dist, gasto_desloc = math.nan, 0.0
     taxa = 0.0 if subtotal >= l["gratis_acima"] > 0 else l["taxa"]
 
-    custo_retirada = subtotal + gasto_desloc
-    custo_entrega = subtotal + taxa if l["entrega"] else None
+    custo_ret = subtotal + gasto_desloc if aceita_retirada else math.nan
+    custo_ent = subtotal + taxa if (aceita_entrega and l["entrega"]) else math.nan
 
-    opcoes = []
-    if modalidade in ("Ambas", "Retirar na loja"):
-        opcoes.append(("Retirar", custo_retirada))
-    if modalidade in ("Ambas", "Receber por entrega") and custo_entrega is not None:
-        opcoes.append(("Entrega", custo_entrega))
+    opcoes = [(m, c) for m, c in (("Retirar", custo_ret), ("Entrega", custo_ent)) if not math.isnan(c)]
     if not opcoes:
         continue
     melhor_mod, melhor_custo = min(opcoes, key=lambda x: x[1])
@@ -354,6 +480,7 @@ for l in lojas:
         "Estabelecimento": l["nome"], "Tipo": l["tipo"], "Bairro": l["bairro"],
         "Subtotal": subtotal, "Distância (km)": dist, "Gasto deslocamento": gasto_desloc,
         "Entrega?": l["entrega"], "Taxa entrega": taxa,
+        "Custo retirada": custo_ret, "Custo entrega": custo_ent,
         "Melhor modalidade": melhor_mod, "Custo total": melhor_custo,
     })
 
@@ -364,13 +491,15 @@ if not linhas:
 df = pd.DataFrame(linhas)
 
 # ------------------------------------------------------------------
-# RESULTADOS
+# RESULTADOS: Buscar resultados → Distâncias → Entregas → Comparação final
 # ------------------------------------------------------------------
 st.subheader("2️⃣ Resultados")
-aba1, aba2, aba3, aba4 = st.tabs(
-    ["💲 Preços", "📍 Distâncias", "🚚 Entregas", "🏆 Comparação final"])
+nomes_abas = ["💲 Preços", "📍 Distâncias", "🚚 Entregas", "🏆 Comparação final"]
+if modo_lista == MODO_FABRICAR and unidades_prod:
+    nomes_abas.append("💰 Precificação")
+abas = st.tabs(nomes_abas)
 
-with aba1:
+with abas[0]:
     st.caption("Menor subtotal primeiro (preço anunciado, sem considerar deslocamento).")
     d = df.sort_values("Subtotal").head(n_resultados)
     st.dataframe(d[["Estabelecimento", "Tipo", "Subtotal"]].assign(
@@ -379,17 +508,20 @@ with aba1:
         tabela = {l["nome"]: {p: brl(preco(l, p)) for p in quantidades} for l in lojas}
         st.dataframe(pd.DataFrame(tabela), use_container_width=True)
 
-with aba2:
-    st.caption(f"Distância a partir de **{origem_label}** (ida e volta no gasto).")
-    d = df.sort_values("Distância (km)").head(n_resultados)
-    st.dataframe(pd.DataFrame({
-        "Estabelecimento": d["Estabelecimento"],
-        "Endereço": d["Bairro"] + ", Piracicaba - SP",
-        "Distância": d["Distância (km)"].map(lambda x: f"{x:.1f} km"),
-        "Gasto estimado": d["Gasto deslocamento"].map(brl),
-    }), hide_index=True, use_container_width=True)
+with abas[1]:
+    if origem_coord is None:
+        st.info("Informe o endereço de origem nas preferências opcionais para comparar distâncias.")
+    else:
+        st.caption(f"Distância a partir de **{origem_label}** (ida e volta no gasto).")
+        d = df.sort_values("Distância (km)").head(n_resultados)
+        st.dataframe(pd.DataFrame({
+            "Estabelecimento": d["Estabelecimento"],
+            "Endereço": d["Bairro"] + ", Piracicaba - SP",
+            "Distância": d["Distância (km)"].map(lambda x: f"{x:.1f} km"),
+            "Gasto estimado": d["Gasto deslocamento"].map(brl),
+        }), hide_index=True, use_container_width=True)
 
-with aba3:
+with abas[2]:
     d = df.sort_values("Taxa entrega").head(n_resultados)
     st.dataframe(pd.DataFrame({
         "Estabelecimento": d["Estabelecimento"],
@@ -397,17 +529,50 @@ with aba3:
         "Taxa": [brl(t) if e else "—" for t, e in zip(d["Taxa entrega"], d["Entrega?"])],
     }), hide_index=True, use_container_width=True)
 
-with aba4:
+with abas[3]:
+    # ---------------- Recomendação de compras ----------------
+    st.markdown("#### 🛍️ Recomendação de compras")
+    if origem_coord is None and aceita_retirada:
+        st.warning("Sem endereço de origem, o custo de retirada não inclui o gasto com deslocamento.")
+
+    def cartao(coluna, titulo, detalhe):
+        s = df[coluna].dropna()
+        with st.container(border=True):
+            st.markdown(f"**{titulo}**")
+            if s.empty:
+                st.caption("Nenhuma opção disponível.")
+                return
+            r = df.loc[s.idxmin()]
+            st.markdown(f"### {r['Estabelecimento']}")
+            st.caption(f"{brl(s.min())} • {detalhe(r)}")
+
+    cards = [
+        ("Custo total", "🏆 Menor custo total",
+         lambda r: f"{r['Melhor modalidade'].lower()} • {r['Bairro']}"),
+        ("Subtotal", "💲 Menor preço dos produtos",
+         lambda r: "preço anunciado, sem deslocamento/entrega"),
+    ]
+    if aceita_entrega:
+        cards.append(("Custo entrega", "🚚 Melhor opção para entrega",
+                      lambda r: f"taxa de entrega {brl(r['Taxa entrega'])}"))
+    if aceita_retirada:
+        cards.append(("Custo retirada", "🏪 Melhor opção para retirada",
+                      lambda r: (f"{r['Distância (km)']:.1f} km de distância"
+                                 if pd.notna(r["Distância (km)"]) else "sem cálculo de deslocamento")))
+    cols = st.columns(2)
+    for i, (col, titulo, fn) in enumerate(cards):
+        with cols[i % 2]:
+            cartao(col, titulo, fn)
+
+    # ---------------- Comparação final ----------------
+    st.markdown("#### 📊 Comparação final")
     final = df.sort_values("Custo total").head(n_resultados).reset_index(drop=True)
     melhor = final.iloc[0]
     pior = df["Custo total"].max()
 
-    c1, c2, c3 = st.columns(3)
-    c1.metric("🏆 Melhor opção", melhor["Estabelecimento"])
-    c2.metric("Custo total", brl(melhor["Custo total"]))
-    c3.metric("Economia vs. mais cara", brl(pior - melhor["Custo total"]))
-    st.success(f"Compensa **{melhor['Melhor modalidade'].lower()}** em "
-               f"**{melhor['Estabelecimento']}** ({melhor['Bairro']}).")
+    c1, c2 = st.columns(2)
+    c1.metric("Custo total (melhor opção)", brl(melhor["Custo total"]))
+    c2.metric("Economia vs. mais cara", brl(pior - melhor["Custo total"]))
 
     st.dataframe(pd.DataFrame({
         "#": range(1, len(final) + 1),
@@ -421,5 +586,38 @@ with aba4:
     }), hide_index=True, use_container_width=True)
 
     st.bar_chart(final.set_index("Estabelecimento")["Custo total"])
+
+# ---------------- Precificação de um ou mais produtos ----------------
+if modo_lista == MODO_FABRICAR and unidades_prod:
+    with abas[4]:
+        loja_ref = next(l for l in LOJAS if l["nome"] == melhor["Estabelecimento"])
+        logistica = melhor["Custo total"] - melhor["Subtotal"]  # deslocamento ou entrega
+
+        insumos_un = {n: sum(q * preco(loja_ref, i) for i, q in meus_produtos[n].items() if i in PRODUTOS)
+                      for n in unidades_prod}
+        usado_total = sum(insumos_un[n] * unidades_prod[n] for n in unidades_prod)
+
+        st.caption(f"Calculado com os preços de **{loja_ref['nome']}** (menor custo total). "
+                   "Sobras de embalagem não entram no custo; o gasto com deslocamento/entrega "
+                   "é dividido entre os produtos.")
+        margem = st.slider("Margem de lucro (%)", 0, 200, 30)
+
+        linhas_p = []
+        for n, un in unidades_prod.items():
+            rateio = logistica * (insumos_un[n] * un / usado_total) / un if usado_total else 0
+            custo_un = insumos_un[n] + rateio
+            venda = custo_un * (1 + margem / 100)
+            linhas_p.append({"Produto": n, "Unidades": un, "Insumos/un": insumos_un[n],
+                             "Logística/un": rateio, "Custo/un": custo_un,
+                             "Preço de venda": venda, "Lucro/un": venda - custo_un})
+        dp = pd.DataFrame(linhas_p)
+
+        c1, c2 = st.columns(2)
+        c1.metric("Custo total da produção", brl(sum(r["Custo/un"] * r["Unidades"] for r in linhas_p)))
+        c2.metric("Receita estimada", brl(sum(r["Preço de venda"] * r["Unidades"] for r in linhas_p)))
+
+        st.dataframe(dp.assign(**{c: dp[c].map(brl) for c in
+                                  ["Insumos/un", "Logística/un", "Custo/un", "Preço de venda", "Lucro/un"]}),
+                     hide_index=True, use_container_width=True)
 
 st.caption("⚠️ Protótipo com dados fictícios. Na versão final, a IA pesquisará preços reais.")
