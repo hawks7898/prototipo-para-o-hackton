@@ -1,7 +1,15 @@
 {
   "robson.martins1109xk@gmail.com": {
-    "salt": "9ec3af4380a19a625bf648fe89df6d70",
-    "hash": "1c28be79a0125934dce4aec0ef23535bf01c88c0afa2eb7eb5be3c91de06d84b",
-    "criado_em": "2026-11-13 17:41:04"
+    "salt": "9e49082f5834ecdbe8f464743d8f6675",
+    "hash": "2d6d613537777be36b9d2ac0ecefa083014b3e32376d391168d7a68812ac6c1b",
+    "criado_em": "2026-11-14 19:29:25",
+    "produtos": {
+      "bolo": {
+        "rendimento": 2,
+        "insumos": {
+          "Açúcar 1 kg": 1
+        }
+      }
+    }
   }
 }

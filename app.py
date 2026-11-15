@@ -14,7 +14,7 @@ import pandas as pd
 import requests
 import streamlit as st
 
-st.set_page_config(page_title="PreçoCerto IA", page_icon="🛒", layout="wide")
+st.set_page_config(page_title="PreçoCerto", page_icon="🛒", layout="wide")
 
 # ------------------------------------------------------------------
 # CONTAS DE USUÁRIO (protótipo: arquivo local usuarios.json)
@@ -54,7 +54,7 @@ def smtp_configurado():
 def enviar_codigo(email, codigo):
     """Envia o código por e-mail. Retorna (ok, mensagem_de_erro)."""
     msg = EmailMessage()
-    msg["Subject"] = "Seu código de verificação - PreçoCerto IA"
+    msg["Subject"] = "Seu código de verificação - PreçoCerto"
     msg["From"] = os.environ["SMTP_USER"]
     msg["To"] = email
     msg.set_content(
@@ -98,7 +98,7 @@ def reiniciar_cadastro():
 
 
 def tela_acesso():
-    st.title("🛒 PreçoCerto IA")
+    st.title("🛒 PreçoCerto")
     st.caption("Entre ou crie sua conta para continuar")
 
     if "cadastro" not in st.session_state:
@@ -250,12 +250,15 @@ MODO_AVULSO = "Itens avulsos"
 MODO_FABRICAR = "Insumos para fabricar produtos"
 
 RECEITA_EXEMPLO = {
-    "Farinha de trigo 1 kg": 0.30,
-    "Açúcar 1 kg": 0.25,
-    "Ovos (dúzia)": 0.30,
-    "Leite 1 L": 0.20,
-    "Óleo de soja 900 ml": 0.15,
-    "Fermento em pó 100 g": 0.20,
+    "rendimento": 10,
+    "insumos": {
+        "Farinha de trigo 1 kg": 3,
+        "Açúcar 1 kg": 2,
+        "Ovos (dúzia)": 3,
+        "Leite 1 L": 2,
+        "Óleo de soja 900 ml": 1,
+        "Fermento em pó 100 g": 2,
+    },
 }
 
 
@@ -295,6 +298,14 @@ def brl(v):
     return f"R$ {v:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
 
 
+def receita_por_unidade(receita):
+    """Converte a receita salva na quantidade de cada insumo por 1 unidade do produto."""
+    if "insumos" in receita:  # formato atual: a receita rende N unidades
+        rend = max(1, int(receita.get("rendimento", 1)))
+        return {i: q / rend for i, q in receita["insumos"].items()}
+    return dict(receita)  # formato antigo: já estava "por unidade"
+
+
 # ---- Callbacks do cadastro de produtos (receitas) ----
 def _salvar_produto_cb():
     nome = st.session_state.get("novo_nome", "").strip()
@@ -305,10 +316,16 @@ def _salvar_produto_cb():
     if not ings:
         st.session_state["erro_produto"] = "Escolha pelo menos um insumo."
         return
-    receita = {i: float(st.session_state.get(f"rc_{i}", 0.1)) for i in ings}
+    receita = {
+        "rendimento": int(st.session_state.get("novo_rend", 10)),
+        "insumos": {i: int(st.session_state.get(f"rc_{i}", 1)) for i in ings},
+    }
     salvar_produto(st.session_state.usuario, nome, receita)
     st.session_state["msg_produto"] = f"Produto '{nome}' salvo!"
+    for i in ings:
+        st.session_state[f"rc_{i}"] = 1
     st.session_state["novo_nome"] = ""
+    st.session_state["novo_rend"] = 10
     st.session_state["novo_ings"] = []
 
 
@@ -329,7 +346,7 @@ def _excluir_cb():
 # ------------------------------------------------------------------
 # PREFERÊNCIAS (obrigatórias e opcionais)
 # ------------------------------------------------------------------
-st.title("🛒 PreçoCerto IA")
+st.title("🛒 PreçoCerto")
 st.caption("Protótipo • Pesquisa e comparação de preços com custo total real • Dados simulados")
 
 with st.sidebar:
@@ -393,7 +410,8 @@ if modo_lista == MODO_AVULSO:
         for i, p in enumerate(escolhidos):
             quantidades[p] = cols[i % len(cols)].number_input(p, 1, 500, 10, key=f"q_{p}")
 else:
-    meus_produtos = obter_produtos(st.session_state.usuario)
+    meus_produtos = {n: receita_por_unidade(r)
+                     for n, r in obter_produtos(st.session_state.usuario).items()}
 
     if "erro_produto" in st.session_state:
         st.error(st.session_state.pop("erro_produto"))
@@ -402,11 +420,13 @@ else:
 
     with st.expander("➕ Pré-configurar produto (receita)"):
         st.text_input("Nome do produto", key="novo_nome", placeholder="Ex.: Bolo de cenoura")
-        ings = st.multiselect("Insumos usados em 1 unidade", list(PRODUTOS), key="novo_ings")
+        st.number_input("Quantas unidades essa receita rende?", 1, 10000, 10, 1, key="novo_rend",
+                        help="Ex.: se a receita completa rende 10 bolos, digite 10.")
+        ings = st.multiselect("Insumos da receita", list(PRODUTOS), key="novo_ings")
+        if ings:
+            st.caption("Quantas unidades de cada insumo a receita usa? (ex.: 2 = duas embalagens)")
         for ing in ings:
-            st.number_input(f"{ing}: quantidade por unidade (em embalagens)",
-                            0.001, 100.0, 0.10, 0.05, format="%.3f", key=f"rc_{ing}",
-                            help="Ex.: 0,2 = 1/5 da embalagem para fazer 1 unidade do produto.")
+            st.number_input(ing, 1, 100, 1, 1, key=f"rc_{ing}")
         st.button("💾 Salvar produto", on_click=_salvar_produto_cb)
 
         if meus_produtos:
@@ -436,11 +456,10 @@ else:
             with st.expander("🧾 Lista de compras gerada", expanded=True):
                 st.dataframe(pd.DataFrame({
                     "Insumo": list(quantidades),
-                    "Necessário (embalagens)": [round(necessidade[i], 2) for i in quantidades],
-                    "Comprar (embalagens)": list(quantidades.values()),
+                    "Comprar (unidades)": list(quantidades.values()),
                 }), hide_index=True, use_container_width=True)
 
-buscar = st.button("🔎 Pesquisar com IA", type="primary", disabled=not quantidades)
+buscar = st.button("🔎 Pesquisar", type="primary", disabled=not quantidades)
 
 if buscar:
     with st.spinner("A IA está pesquisando preços em Piracicaba..."):
@@ -448,7 +467,7 @@ if buscar:
     st.session_state["pesquisou"] = True
 
 if not st.session_state.get("pesquisou") or not quantidades:
-    st.info("Escolha o que comprar, ajuste as preferências e clique em **Pesquisar com IA**.")
+    st.info("Escolha o que comprar, ajuste as preferências e clique em **Pesquisar**.")
     st.stop()
 
 # ------------------------------------------------------------------
@@ -585,7 +604,8 @@ with abas[3]:
         "Custo total": final["Custo total"].map(brl),
     }), hide_index=True, use_container_width=True)
 
-    st.bar_chart(final.set_index("Estabelecimento")["Custo total"])
+    if st.checkbox("📊 Mostrar gráfico", value=False):
+        st.bar_chart(final.set_index("Estabelecimento")["Custo total"])
 
 # ---------------- Precificação de um ou mais produtos ----------------
 if modo_lista == MODO_FABRICAR and unidades_prod:
