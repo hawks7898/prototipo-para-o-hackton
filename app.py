@@ -22,6 +22,18 @@ st.set_page_config(page_title="PreçoCerto", page_icon="🛒", layout="wide")
 ARQ_USUARIOS = Path(__file__).parent / "usuarios.json"
 VALIDADE_CODIGO_SEG = 600  # 10 minutos
 MAX_TENTATIVAS = 5
+MODELO_CLAUDE = "claude-haiku-5-5"  # modelo usado para interpretar endereços
+
+
+def segredo(nome, padrao=""):
+    """Lê uma chave de variável de ambiente ou de st.secrets (Streamlit Cloud / secrets.toml)."""
+    valor = os.environ.get(nome)
+    if valor:
+        return valor
+    try:
+        return str(st.secrets[nome])
+    except Exception:
+        return padrao
 
 
 def carregar_usuarios():
@@ -48,24 +60,24 @@ def email_valido(email):
 
 
 def smtp_configurado():
-    return all(os.environ.get(k) for k in ("SMTP_HOST", "SMTP_USER", "SMTP_PASS"))
+    return all(segredo(k) for k in ("SMTP_HOST", "SMTP_USER", "SMTP_PASS"))
 
 
 def enviar_codigo(email, codigo):
     """Envia o código por e-mail. Retorna (ok, mensagem_de_erro)."""
     msg = EmailMessage()
     msg["Subject"] = "Seu código de verificação - PreçoCerto"
-    msg["From"] = os.environ["SMTP_USER"]
+    msg["From"] = segredo("SMTP_USER")
     msg["To"] = email
     msg.set_content(
         f"Olá!\n\nSeu código de verificação é: {codigo}\n\n"
         "Ele vale por 10 minutos. Se você não pediu, ignore este e-mail."
     )
     try:
-        porta = int(os.environ.get("SMTP_PORT", "587"))
-        with smtplib.SMTP(os.environ["SMTP_HOST"], porta, timeout=15) as s:
+        porta = int(segredo("SMTP_PORT", "587"))
+        with smtplib.SMTP(segredo("SMTP_HOST"), porta, timeout=15) as s:
             s.starttls()
-            s.login(os.environ["SMTP_USER"], os.environ["SMTP_PASS"])
+            s.login(segredo("SMTP_USER"), segredo("SMTP_PASS"))
             s.send_message(msg)
         return True, ""
     except Exception as e:
@@ -228,26 +240,44 @@ BAIRROS = {
     "Algodoal": (-22.7200, -47.6700),
 }
 
-# Estabelecimentos fictícios
+# Estabelecimentos REAIS de Piracicaba (endereços informados pelo autor).
+# ATENÇÃO: preços, taxas de entrega e disponibilidade de entrega são SIMULADOS.
 LOJAS = [
-    {"nome": "Mercado Central", "bairro": "Centro", "tipo": "Supermercado",
-     "fator": 1.08, "entrega": True, "taxa": 9.90, "gratis_acima": 250},
-    {"nome": "Atacadão do Povo", "bairro": "Jaraguá", "tipo": "Atacado",
-     "fator": 0.90, "entrega": False, "taxa": 0, "gratis_acima": 0},
-    {"nome": "Super Paulista", "bairro": "Paulista", "tipo": "Supermercado",
-     "fator": 1.00, "entrega": True, "taxa": 7.50, "gratis_acima": 180},
-    {"nome": "Distribuidora Alto", "bairro": "Alto", "tipo": "Distribuidora",
-     "fator": 0.94, "entrega": True, "taxa": 14.00, "gratis_acima": 300},
-    {"nome": "Mercadão Nova Pira", "bairro": "Nova Piracicaba", "tipo": "Supermercado",
-     "fator": 0.97, "entrega": True, "taxa": 6.00, "gratis_acima": 0},
-    {"nome": "Empório Santa Terezinha", "bairro": "Santa Terezinha", "tipo": "Mercearia",
+    {"nome": "Mercado Municipal de Piracicaba", "endereco": "Praça Dr. Alfredo Cardoso, 1336",
+     "bairro": "Centro",
      "fator": 1.12, "entrega": False, "taxa": 0, "gratis_acima": 0},
-    {"nome": "Atacarejo Algodoal", "bairro": "Algodoal", "tipo": "Atacado",
-     "fator": 0.92, "entrega": True, "taxa": 18.00, "gratis_acima": 400},
+    {"nome": "Supermercados Pague Menos", "endereco": "Avenida Dona Francisca, 333",
+     "bairro": "Vila Rezende",
+     "fator": 0.96, "entrega": True, "taxa": 8.00, "gratis_acima": 200},
+    {"nome": "Assaí Atacadista", "endereco": "Rua Regente Feijó, 823",
+     "bairro": "Centro",
+     "fator": 0.88, "entrega": False, "taxa": 0, "gratis_acima": 0},
+    {"nome": "Delta Supermercados Areão", "endereco": "Avenida Monsenhor Martinho Salgot, 471",
+     "bairro": "Areão",
+     "fator": 1.02, "entrega": True, "taxa": 9.90, "gratis_acima": 250},
+    {"nome": "Carrefour Hipermercado", "endereco": "Avenida Rui Teixeira Mendes, 300",
+     "bairro": "Terras de Piracicaba",
+     "fator": 1.00, "entrega": True, "taxa": 12.00, "gratis_acima": 300},
+    {"nome": "Savegnago Supermercados", "endereco": "Avenida Professor Alberto Vollet Sachs, 650",
+     "bairro": "Nova América",
+     "fator": 1.01, "entrega": True, "taxa": 9.00, "gratis_acima": 220},
+    {"nome": "Delta Supermercados Luciano Guidotti", "endereco": "Avenida Comendador Luciano Guidotti, 1184",
+     "bairro": "Higienópolis",
+     "fator": 1.03, "entrega": True, "taxa": 9.90, "gratis_acima": 250},
+    {"nome": "Coop Supermercado", "endereco": "Avenida Professor Alberto Vollet Sachs, 2030",
+     "bairro": "Morumbi / Vila Monteiro",
+     "fator": 1.05, "entrega": True, "taxa": 10.00, "gratis_acima": 250},
+    {"nome": "Jaú Serve Supermercados", "endereco": "Rua Governador Pedro de Toledo, 1432",
+     "bairro": "Centro",
+     "fator": 0.97, "entrega": True, "taxa": 6.50, "gratis_acima": 150},
+    {"nome": "JJR Supermercados", "endereco": "Rua Fernando Lopes, 1020",
+     "bairro": "Pauliceia",
+     "fator": 0.99, "entrega": False, "taxa": 0, "gratis_acima": 0},
 ]
 
 MODO_AVULSO = "Itens avulsos"
 MODO_FABRICAR = "Insumos para fabricar produtos"
+NOVO_PRODUTO = "➕ Novo produto"
 
 RECEITA_EXEMPLO = {
     "rendimento": 10,
@@ -276,22 +306,183 @@ def distancia_km(a, b):
     return 2 * 6371 * math.asin(math.sqrt(h)) * 1.3
 
 
-@st.cache_data(show_spinner=False)
-def geocodificar(endereco):
-    """Converte um endereço em coordenadas (OpenStreetMap/Nominatim). Precisa de internet."""
+PIRACICABA = (-22.7253, -47.6492)
+
+SISTEMA_ENDERECO = (
+    "Você padroniza endereços brasileiros digitados de forma livre. A cidade é Piracicaba, SP, "
+    "salvo se o usuário indicar outra. Corrija abreviações e erros de digitação "
+    "(ex.: 'av' vira 'Avenida', 'pira' vira 'Piracicaba'). Mantenha número e bairro apenas se "
+    "foram informados. NÃO invente rua, número ou bairro. Responda SOMENTE com JSON no formato "
+    '{"endereco": "Rua Exemplo, 123, Bairro, Piracicaba - SP"}.'
+)
+
+
+@st.cache_data(show_spinner=False, ttl=86400)
+def _claude_endereco(endereco):
+    r = requests.post(
+        "https://api.anthropic.com/v1/messages",
+        headers={"x-api-key": segredo("ANTHROPIC_API_KEY"),
+                 "anthropic-version": "2023-06-01", "content-type": "application/json"},
+        json={"model": MODELO_CLAUDE, "max_tokens": 200, "system": SISTEMA_ENDERECO,
+              "messages": [{"role": "user", "content": endereco[:200]}]},
+        timeout=20,
+    )
+    if r.status_code != 200:
+        raise RuntimeError(f"Claude {r.status_code}: {r.text[:150]}")
+    texto = "".join(b.get("text", "") for b in r.json()["content"])
+    padrao = json.loads(re.search(r"\{.*\}", texto, re.S).group(0))["endereco"].strip()
+    if not padrao:
+        raise ValueError("resposta vazia")
+    return padrao[:200]
+
+
+def padronizar_endereco(endereco):
+    """A IA (Claude) corrige e padroniza o endereço digitado. Sem chave/erro: usa o texto original."""
+    if not segredo("ANTHROPIC_API_KEY"):
+        return endereco
     try:
-        r = requests.get(
-            "https://nominatim.openstreetmap.org/search",
-            params={"q": f"{endereco}, Piracicaba, SP, Brasil", "format": "json", "limit": 1},
-            headers={"User-Agent": "PrecoCertoIA-prototipo/1.0"},
-            timeout=8,
-        )
-        dados = r.json()
-        if dados:
-            return float(dados[0]["lat"]), float(dados[0]["lon"]), dados[0]["display_name"]
+        return _claude_endereco(endereco)
     except Exception:
-        pass
+        return endereco
+
+
+def _variantes_endereco(endereco):
+    """Tentativas de busca: primeiro o endereço completo, depois sem o número da casa."""
+    base = re.sub(r"\s+", " ", endereco).strip()
+    variantes = [base]
+    achados = list(re.finditer(r"\b\d+\b", base))
+    if achados:
+        m = achados[-1]
+        sem = base[:m.start()] + " " + base[m.end():]
+        sem = re.sub(r"\s*,\s*,", ",", sem)
+        sem = re.sub(r"\s+", " ", sem).strip(" ,")
+        if sem and sem != base:
+            variantes.append(sem)
+    return variantes
+
+
+@st.cache_resource
+def _estado_osm():
+    return {"t": 0.0}
+
+
+def _esperar_osm():
+    """O OpenStreetMap aceita no máximo 1 consulta por segundo."""
+    estado = _estado_osm()
+    espera = 1.1 - (time.time() - estado["t"])
+    if espera > 0:
+        time.sleep(espera)
+    estado["t"] = time.time()
+
+
+@st.cache_data(show_spinner=False, ttl=604800, persist="disk")
+def _geocodificar_cache(endereco, usar_ors):
+    erros = []
+    variantes = _variantes_endereco(endereco)
+    for i, v in enumerate(variantes):
+        texto = f"{v}, Piracicaba, SP, Brasil"
+        aprox = " (aproximado, sem o número)" if i > 0 else ""
+        if usar_ors:
+            try:
+                r = requests.get(
+                    "https://api.heigit.org/pelias/v1/search",
+                    params={"api_key": segredo("ORS_API_KEY"), "text": texto, "size": 1,
+                            "boundary.country": "BR",
+                            "boundary.circle.lat": PIRACICABA[0],
+                            "boundary.circle.lon": PIRACICABA[1],
+                            "boundary.circle.radius": 40},
+                    timeout=10,
+                )
+                if r.status_code != 200:
+                    erros.append(f"ORS {r.status_code}")
+                else:
+                    feats = r.json().get("features", [])
+                    if feats:
+                        lon, lat = feats[0]["geometry"]["coordinates"]
+                        return lat, lon, feats[0]["properties"].get("label", v) + aprox
+            except Exception as e:
+                erros.append(f"ORS {type(e).__name__}")
+        _esperar_osm()
+        try:
+            r = requests.get(
+                "https://nominatim.openstreetmap.org/search",
+                params={"q": texto, "format": "json", "limit": 1},
+                headers={"User-Agent": "PrecoCerto-prototipo/1.0"},
+                timeout=10,
+            )
+            if r.status_code != 200:
+                erros.append(f"OSM {r.status_code}")
+            else:
+                dados = r.json()
+                if dados:
+                    return float(dados[0]["lat"]), float(dados[0]["lon"]), dados[0]["display_name"] + aprox
+        except Exception as e:
+            erros.append(f"OSM {type(e).__name__}")
+    raise ValueError("; ".join(erros) or "sem resultado para esse endereço")
+
+
+def geocodificar(endereco):
+    """Endereço -> (lat, lon, descrição). Usa OpenRouteService (se tiver chave) e OpenStreetMap."""
+    try:
+        return _geocodificar_cache(endereco, bool(segredo("ORS_API_KEY")))
+    except Exception as e:
+        st.session_state["geo_erro"] = str(e)[:200]
+        return None
+
+
+def coord_loja(loja):
+    """(lat, lon, descrição) do estabelecimento, ou None se não foi possível localizar."""
+    if loja.get("endereco"):
+        achado = geocodificar(loja["endereco"])
+        if achado:
+            return achado
+    if loja["bairro"] in BAIRROS:
+        return (*BAIRROS[loja["bairro"]], f"ponto aproximado do bairro {loja['bairro']}")
     return None
+
+
+@st.cache_data(show_spinner=False, ttl=604800, persist="disk")
+def _rota_cache(origem, destino):
+    r = requests.post(
+        "https://api.heigit.org/openrouteservice/v2/directions/driving-car",
+        headers={"Authorization": segredo("ORS_API_KEY"), "Content-Type": "application/json"},
+        json={"coordinates": [[origem[1], origem[0]], [destino[1], destino[0]]],
+              "radiuses": [-1, -1]},
+        timeout=20,
+    )
+    if r.status_code != 200:
+        raise RuntimeError(f"ORS {r.status_code}: {r.text[:150]}")
+    resumo = r.json()["routes"][0]["summary"]
+    return resumo["distance"] / 1000, resumo["duration"] / 60  # km, minutos
+
+
+def calcular_distancias(origem, lojas):
+    """Retorna ({loja: (km, minutos, fonte, local)}, aviso). Rota real se houver chave."""
+    chave = segredo("ORS_API_KEY")
+    resultado, erros, sem_local = {}, [], []
+    for l in lojas:
+        achado = coord_loja(l)
+        if achado is None:
+            resultado[l["nome"]] = (math.nan, math.nan, "Sem localização", "não localizado")
+            sem_local.append(l["nome"])
+            continue
+        destino, local = tuple(achado[:2]), achado[2]
+        if chave:
+            try:
+                km, mins = _rota_cache(tuple(origem), destino)
+                resultado[l["nome"]] = (km, mins, "Rota real", local)
+                continue
+            except Exception as e:
+                erros.append(str(e))
+        resultado[l["nome"]] = (distancia_km(origem, destino), math.nan, "Estimada", local)
+    avisos = []
+    if not chave:
+        avisos.append("Chave ORS_API_KEY não configurada: usando estimativa em linha reta.")
+    elif erros:
+        avisos.append(f"Algumas rotas reais falharam ({erros[0]}). Nelas, usei estimativa.")
+    if sem_local:
+        avisos.append("Não consegui localizar: " + ", ".join(sem_local) + ". Sem opção de retirada para eles.")
+    return resultado, (" ".join(avisos) or None)
 
 
 def brl(v):
@@ -322,6 +513,8 @@ def _salvar_produto_cb():
     }
     salvar_produto(st.session_state.usuario, nome, receita)
     st.session_state["msg_produto"] = f"Produto '{nome}' salvo!"
+    atual = [p for p in st.session_state.get("prod_sel", []) if p != NOVO_PRODUTO]
+    st.session_state["prod_sel"] = atual + ([nome] if nome not in atual else [])
     for i in ings:
         st.session_state[f"rc_{i}"] = 1
     st.session_state["novo_nome"] = ""
@@ -332,6 +525,7 @@ def _salvar_produto_cb():
 def _exemplo_cb():
     salvar_produto(st.session_state.usuario, "Bolo simples (exemplo)", RECEITA_EXEMPLO)
     st.session_state["msg_produto"] = "Produto de exemplo adicionado!"
+    st.session_state["prod_sel"] = ["Bolo simples (exemplo)"]
 
 
 def _excluir_cb():
@@ -341,6 +535,15 @@ def _excluir_cb():
         st.session_state["prod_sel"] = [p for p in st.session_state.get("prod_sel", []) if p != nome]
         st.session_state["del_prod"] = ""
         st.session_state["msg_produto"] = f"Produto '{nome}' excluído."
+
+
+@st.dialog("Quantos você precisa?")
+def perguntar_quantidade(produto):
+    st.write(f"**{produto}**")
+    qtd = st.number_input("Quantidade", 1, 500, 1, 1)
+    if st.button("Adicionar", type="primary"):
+        st.session_state["itens"][produto] = int(qtd)
+        st.rerun()
 
 
 # ------------------------------------------------------------------
@@ -380,14 +583,25 @@ with st.sidebar:
                                      placeholder="Ex.: Rua Governador Pedro de Toledo, 1000")
             origem_coord, origem_label = BAIRROS["Centro"], "Centro (padrão)"
             if endereco.strip():
-                with st.spinner("Localizando endereço..."):
-                    achado = geocodificar(endereco.strip())
+                st.session_state.pop("geo_erro", None)
+                with st.spinner("Entendendo o endereço..."):
+                    padrao = padronizar_endereco(endereco.strip())
+                    achado = geocodificar(padrao)
+                    if not achado and padrao != endereco.strip():
+                        achado = geocodificar(endereco.strip())
                 if achado:
-                    origem_coord, origem_label = achado[:2], endereco.strip()
+                    origem_coord, origem_label = achado[:2], padrao
+                    if padrao != endereco.strip():
+                        st.caption(f"🤖 Interpretado como: {padrao}")
                     st.caption(f"✅ Encontrado: {achado[2]}")
                 else:
-                    st.warning("Não encontrei esse endereço (ou está sem internet). "
+                    st.warning("Não encontrei esse endereço. Tente no formato: rua, número, bairro "
+                               "(ex.: Rua Governador Pedro de Toledo, 1000, Centro). "
                                "Usando o Centro como origem.")
+                    st.caption(f"Detalhe técnico: {st.session_state.get('geo_erro', '—')}")
+
+        st.caption(f"{'✅' if segredo('ANTHROPIC_API_KEY') else '⚪'} Interpretação de endereço • "
+                   f"{'✅' if segredo('ORS_API_KEY') else '⚪'} Rotas reais")
 
         combustivel = st.number_input("Preço do combustível (R$/L)", 3.0, 10.0, 6.20, 0.10)
         consumo = st.number_input("Consumo do veículo (km/L)", 3.0, 30.0, 11.0, 0.5)
@@ -403,12 +617,30 @@ unidades_prod = {}
 meus_produtos = {}
 
 if modo_lista == MODO_AVULSO:
-    escolhidos = st.multiselect("Produtos", list(PRODUTOS),
-                                default=["Arroz 5 kg", "Feijão carioca 1 kg", "Óleo de soja 900 ml"])
-    if escolhidos:
-        cols = st.columns(min(len(escolhidos), 4))
-        for i, p in enumerate(escolhidos):
-            quantidades[p] = cols[i % len(cols)].number_input(p, 1, 500, 10, key=f"q_{p}")
+    itens = st.session_state.setdefault(
+        "itens", {"Arroz 5 kg": 10, "Feijão carioca 1 kg": 10, "Óleo de soja 900 ml": 10})
+    perguntados = st.session_state.setdefault("perguntados", set())
+
+    escolhidos = st.multiselect(
+        "Produtos", list(PRODUTOS), default=list(itens), key="itens_sel",
+        format_func=lambda p: f"{p}  ×{itens[p]}" if p in itens else p,
+        help="Ao adicionar um item, o app pergunta a quantidade. "
+             "Para mudar depois, remova o item e adicione de novo.")
+
+    for p in list(itens):  # itens removidos da barra
+        if p not in escolhidos:
+            del itens[p]
+            perguntados.discard(p)
+    pendentes = [p for p in escolhidos if p not in itens]
+    if pendentes:
+        p = pendentes[0]
+        if p in perguntados:  # fechou a janela sem responder: assume 1 unidade
+            itens[p] = 1
+            perguntados.discard(p)
+        else:
+            perguntados.add(p)
+            perguntar_quantidade(p)
+    quantidades = {p: itens[p] for p in escolhidos if p in itens}
 else:
     meus_produtos = {n: receita_por_unidade(r)
                      for n, r in obter_produtos(st.session_state.usuario).items()}
@@ -418,27 +650,33 @@ else:
     if "msg_produto" in st.session_state:
         st.success(st.session_state.pop("msg_produto"))
 
-    with st.expander("➕ Pré-configurar produto (receita)"):
-        st.text_input("Nome do produto", key="novo_nome", placeholder="Ex.: Bolo de cenoura")
-        st.number_input("Quantas unidades essa receita rende?", 1, 10000, 10, 1, key="novo_rend",
-                        help="Ex.: se a receita completa rende 10 bolos, digite 10.")
-        ings = st.multiselect("Insumos da receita", list(PRODUTOS), key="novo_ings")
-        if ings:
-            st.caption("Quantas unidades de cada insumo a receita usa? (ex.: 2 = duas embalagens)")
-        for ing in ings:
-            st.number_input(ing, 1, 100, 1, 1, key=f"rc_{ing}")
-        st.button("💾 Salvar produto", on_click=_salvar_produto_cb)
-
-        if meus_produtos:
-            st.divider()
-            st.selectbox("Excluir produto", [""] + list(meus_produtos), key="del_prod")
+    if meus_produtos:
+        sel = st.multiselect("Produtos que vou fabricar", [NOVO_PRODUTO] + list(meus_produtos),
+                             key="prod_sel", help="Escolha produtos já salvos ou use a opção Novo produto.")
+        criando = NOVO_PRODUTO in sel
+        sel = [p for p in sel if p != NOVO_PRODUTO]
+        with st.expander("🗑️ Excluir produto salvo"):
+            st.selectbox("Produto", [""] + list(meus_produtos), key="del_prod")
             st.button("🗑️ Excluir", on_click=_excluir_cb)
-
-    if not meus_produtos:
-        st.info("Você ainda não tem produtos salvos. Crie um acima ou use o exemplo.")
-        st.button("✨ Adicionar produto de exemplo", on_click=_exemplo_cb)
     else:
-        sel = st.multiselect("Produtos que vou fabricar", list(meus_produtos), key="prod_sel")
+        st.info("Você ainda não tem produtos salvos. Crie o primeiro abaixo ou use o exemplo.")
+        st.button("✨ Adicionar produto de exemplo", on_click=_exemplo_cb)
+        criando, sel = True, []
+
+    if criando:
+        with st.container(border=True):
+            st.markdown("**➕ Novo produto**")
+            st.text_input("Nome do produto", key="novo_nome", placeholder="Ex.: Bolo de cenoura")
+            st.number_input("Quantas unidades essa receita rende?", 1, 10000, 10, 1, key="novo_rend",
+                            help="Ex.: se a receita completa rende 10 bolos, digite 10.")
+            ings = st.multiselect("Insumos da receita", list(PRODUTOS), key="novo_ings")
+            if ings:
+                st.caption("Quantas unidades de cada insumo a receita usa? (ex.: 2 = duas embalagens)")
+            for ing in ings:
+                st.number_input(ing, 1, 100, 1, 1, key=f"rc_{ing}")
+            st.button("💾 Salvar produto", on_click=_salvar_produto_cb)
+
+    if meus_produtos:
         cols = st.columns(min(max(len(sel), 1), 4))
         for i, nome in enumerate(sel):
             unidades_prod[nome] = cols[i % len(cols)].number_input(
@@ -477,14 +715,19 @@ lojas = [l for l in LOJAS if not preferidos or l["nome"] in preferidos]
 aceita_retirada = modalidade in ("Ambas", "Retirar na loja")
 aceita_entrega = modalidade in ("Ambas", "Receber por entrega")
 
+rotas, aviso_rotas = {}, None
+if origem_coord:
+    with st.spinner("Calculando distâncias reais por rota..."):
+        rotas, aviso_rotas = calcular_distancias(origem_coord, lojas)
+
 linhas = []
 for l in lojas:
     subtotal = sum(preco(l, p) * q for p, q in quantidades.items())
     if origem_coord:
-        dist = distancia_km(origem_coord, BAIRROS[l["bairro"]])
-        gasto_desloc = (dist * 2 / consumo) * combustivel  # ida e volta
+        dist, tempo, fonte, local = rotas[l["nome"]]
+        gasto_desloc = (dist * 2 / consumo) * combustivel  # ida e volta (NaN se não localizado)
     else:
-        dist, gasto_desloc = math.nan, 0.0
+        dist, tempo, fonte, local, gasto_desloc = math.nan, math.nan, "—", "—", 0.0
     taxa = 0.0 if subtotal >= l["gratis_acima"] > 0 else l["taxa"]
 
     custo_ret = subtotal + gasto_desloc if aceita_retirada else math.nan
@@ -496,8 +739,10 @@ for l in lojas:
     melhor_mod, melhor_custo = min(opcoes, key=lambda x: x[1])
 
     linhas.append({
-        "Estabelecimento": l["nome"], "Tipo": l["tipo"], "Bairro": l["bairro"],
-        "Subtotal": subtotal, "Distância (km)": dist, "Gasto deslocamento": gasto_desloc,
+        "Estabelecimento": l["nome"], "Bairro": l["bairro"],
+        "Endereço": f"{l.get('endereco') or l['bairro']} - {l['bairro']}", "Local encontrado": local,
+        "Subtotal": subtotal, "Distância (km)": dist, "Tempo (min)": tempo, "Fonte": fonte,
+        "Gasto deslocamento": gasto_desloc,
         "Entrega?": l["entrega"], "Taxa entrega": taxa,
         "Custo retirada": custo_ret, "Custo entrega": custo_ent,
         "Melhor modalidade": melhor_mod, "Custo total": melhor_custo,
@@ -521,7 +766,7 @@ abas = st.tabs(nomes_abas)
 with abas[0]:
     st.caption("Menor subtotal primeiro (preço anunciado, sem considerar deslocamento).")
     d = df.sort_values("Subtotal").head(n_resultados)
-    st.dataframe(d[["Estabelecimento", "Tipo", "Subtotal"]].assign(
+    st.dataframe(d[["Estabelecimento", "Subtotal"]].assign(
         Subtotal=d["Subtotal"].map(brl)), hide_index=True, use_container_width=True)
     with st.expander("Ver preço unitário por produto"):
         tabela = {l["nome"]: {p: brl(preco(l, p)) for p in quantidades} for l in lojas}
@@ -532,13 +777,22 @@ with abas[1]:
         st.info("Informe o endereço de origem nas preferências opcionais para comparar distâncias.")
     else:
         st.caption(f"Distância a partir de **{origem_label}** (ida e volta no gasto).")
+        if aviso_rotas:
+            st.warning(aviso_rotas)
+        else:
+            st.success("✅ Distâncias reais por rota (ruas), calculadas com OpenRouteService.")
         d = df.sort_values("Distância (km)").head(n_resultados)
         st.dataframe(pd.DataFrame({
             "Estabelecimento": d["Estabelecimento"],
-            "Endereço": d["Bairro"] + ", Piracicaba - SP",
-            "Distância": d["Distância (km)"].map(lambda x: f"{x:.1f} km"),
-            "Gasto estimado": d["Gasto deslocamento"].map(brl),
+            "Endereço": d["Endereço"],
+            "Distância": d["Distância (km)"].map(lambda x: f"{x:.1f} km" if pd.notna(x) else "—"),
+            "Tempo": d["Tempo (min)"].map(lambda x: f"{x:.0f} min" if pd.notna(x) else "—"),
+            "Fonte": d["Fonte"],
+            "Gasto estimado": d["Gasto deslocamento"].map(lambda x: brl(x) if pd.notna(x) else "—"),
         }), hide_index=True, use_container_width=True)
+        with st.expander("📍 Conferir a localização encontrada de cada mercado"):
+            st.dataframe(df[["Estabelecimento", "Local encontrado"]], hide_index=True,
+                         use_container_width=True)
 
 with abas[2]:
     d = df.sort_values("Taxa entrega").head(n_resultados)
@@ -640,4 +894,4 @@ if modo_lista == MODO_FABRICAR and unidades_prod:
                                   ["Insumos/un", "Logística/un", "Custo/un", "Preço de venda", "Lucro/un"]}),
                      hide_index=True, use_container_width=True)
 
-st.caption("⚠️ Protótipo com dados fictícios. Na versão final, a IA pesquisará preços reais.")
+st.caption("⚠️ Protótipo: os mercados e as distâncias são reais, mas os preços, taxas e entregas são simulados.")

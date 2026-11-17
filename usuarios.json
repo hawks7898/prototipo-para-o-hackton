@@ -4,10 +4,17 @@
     "hash": "2d6d613537777be36b9d2ac0ecefa083014b3e32376d391168d7a68812ac6c1b",
     "criado_em": "2026-11-14 19:29:25",
     "produtos": {
-      "bolo": {
-        "rendimento": 2,
+      "bolinho": {
+        "rendimento": 1,
         "insumos": {
-          "Açúcar 1 kg": 1
+          "Açúcar 1 kg": 1,
+          "Óleo de soja 900 ml": 1,
+          "Farinha de trigo 1 kg": 2,
+          "Leite 1 L": 1,
+          "Ovos (dúzia)": 1,
+          "Manteiga 200 g": 1,
+          "Chocolate em pó 200 g": 1,
+          "Fermento em pó 100 g": 1
         }
       }
     }
