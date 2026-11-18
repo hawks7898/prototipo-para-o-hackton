@@ -16,6 +16,14 @@ import streamlit as st
 
 st.set_page_config(page_title="PreçoCerto", page_icon="🛒", layout="wide")
 
+
+def multiselect_sem_todos(*args, **kwargs):
+    """st.multiselect sem a opção 'Select all' (parâmetro novo; ignorado em versões antigas)."""
+    try:
+        return st.multiselect(*args, select_all=False, **kwargs)
+    except TypeError:
+        return st.multiselect(*args, **kwargs)
+
 # ------------------------------------------------------------------
 # CONTAS DE USUÁRIO (protótipo: arquivo local usuarios.json)
 # ------------------------------------------------------------------
@@ -500,26 +508,25 @@ def receita_por_unidade(receita):
 # ---- Callbacks do cadastro de produtos (receitas) ----
 def _salvar_produto_cb():
     nome = st.session_state.get("novo_nome", "").strip()
-    ings = st.session_state.get("novo_ings", [])
+    insumos = dict(st.session_state.get("rec_itens", {}))
     if not nome:
         st.session_state["erro_produto"] = "Dê um nome ao produto."
         return
-    if not ings:
+    if not insumos:
         st.session_state["erro_produto"] = "Escolha pelo menos um insumo."
         return
     receita = {
         "rendimento": int(st.session_state.get("novo_rend", 10)),
-        "insumos": {i: int(st.session_state.get(f"rc_{i}", 1)) for i in ings},
+        "insumos": {i: int(q) for i, q in insumos.items()},
     }
     salvar_produto(st.session_state.usuario, nome, receita)
     st.session_state["msg_produto"] = f"Produto '{nome}' salvo!"
     atual = [p for p in st.session_state.get("prod_sel", []) if p != NOVO_PRODUTO]
     st.session_state["prod_sel"] = atual + ([nome] if nome not in atual else [])
-    for i in ings:
-        st.session_state[f"rc_{i}"] = 1
+    st.session_state["rec_itens"] = {}
+    st.session_state["rec_versao"] = st.session_state.get("rec_versao", 0) + 1
     st.session_state["novo_nome"] = ""
     st.session_state["novo_rend"] = 10
-    st.session_state["novo_ings"] = []
 
 
 def _exemplo_cb():
@@ -528,22 +535,61 @@ def _exemplo_cb():
     st.session_state["prod_sel"] = ["Bolo simples (exemplo)"]
 
 
-def _excluir_cb():
-    nome = st.session_state.get("del_prod", "")
-    if nome:
-        excluir_produto(st.session_state.usuario, nome)
-        st.session_state["prod_sel"] = [p for p in st.session_state.get("prod_sel", []) if p != nome]
-        st.session_state["del_prod"] = ""
-        st.session_state["msg_produto"] = f"Produto '{nome}' excluído."
+def _excluir_cb(nome):
+    excluir_produto(st.session_state.usuario, nome)
+    st.session_state["prod_sel"] = [p for p in st.session_state.get("prod_sel", []) if p != nome]
+    st.session_state["msg_produto"] = f"Produto '{nome}' excluído."
 
 
-@st.dialog("Quantos você precisa?")
-def perguntar_quantidade(produto):
-    st.write(f"**{produto}**")
-    qtd = st.number_input("Quantidade", 1, 500, 1, 1)
-    if st.button("Adicionar", type="primary"):
-        st.session_state["itens"][produto] = int(qtd)
+@st.dialog("Excluir receita?")
+def confirmar_exclusao(nome):
+    st.write(f"Tem certeza que quer excluir a receita **{nome}**? Essa ação não pode ser desfeita.")
+    c1, c2 = st.columns(2)
+    if c1.button("Excluir", type="primary", on_click=_excluir_cb, args=(nome,)):
         st.rerun()
+    if c2.button("Cancelar"):
+        st.rerun()
+
+
+def _decorador_dialogo(titulo):
+    try:
+        return st.dialog(titulo, dismissible=False)
+    except TypeError:  # versões antigas do Streamlit
+        return st.dialog(titulo)
+
+
+def _corpo_dialogo(produto, estado, chave_versao):
+    st.write(f"**{produto}**")
+    qtd = st.number_input("Quantidade", 1, 500, 1, 1, key=f"qtd_{estado}")
+    c1, c2 = st.columns(2)
+    if c1.button("Adicionar", type="primary", key=f"add_{estado}"):
+        st.session_state[estado][produto] = int(qtd)
+        st.session_state[chave_versao] += 1
+        st.rerun()
+    if c2.button("Cancelar", key=f"cancel_{estado}"):
+        st.session_state[chave_versao] += 1  # recria a barra sem o item
+        st.rerun()
+
+
+@_decorador_dialogo("Quantos você precisa?")
+def perguntar_quantidade(produto):
+    _corpo_dialogo(produto, "itens", "itens_versao")
+
+
+@_decorador_dialogo("Quantas unidades a receita usa?")
+def perguntar_insumo(produto):
+    _corpo_dialogo(produto, "rec_itens", "rec_versao")
+
+
+def alterar_quantidade(itens, chave_versao, versao, prefixo):
+    with st.popover("✏️ Alterar quantidade"):
+        alvo = st.selectbox("Item", list(itens), key=f"{prefixo}_alvo_{versao}")
+        nova = st.number_input("Nova quantidade", 1, 500, itens[alvo], 1,
+                               key=f"{prefixo}_nq_{versao}_{alvo}")
+        if st.button("Salvar quantidade", key=f"{prefixo}_salvar"):
+            itens[alvo] = int(nova)
+            st.session_state[chave_versao] += 1
+            st.rerun()
 
 
 # ------------------------------------------------------------------
@@ -568,7 +614,7 @@ with st.sidebar:
     with st.expander("Opcionais", expanded=True):
         modalidade = st.radio("Modalidade de compra",
                               ["Ambas", "Retirar na loja", "Receber por entrega"])
-        preferidos = st.multiselect("Estabelecimentos preferenciais (vazio = todos)",
+        preferidos = multiselect_sem_todos("Estabelecimentos preferenciais (vazio = todos)",
                                     [l["nome"] for l in LOJAS])
 
         st.markdown("**📍 Endereço de origem**")
@@ -619,28 +665,33 @@ meus_produtos = {}
 if modo_lista == MODO_AVULSO:
     itens = st.session_state.setdefault(
         "itens", {"Arroz 5 kg": 10, "Feijão carioca 1 kg": 10, "Óleo de soja 900 ml": 10})
-    perguntados = st.session_state.setdefault("perguntados", set())
+    versao = st.session_state.setdefault("itens_versao", 0)
 
-    escolhidos = st.multiselect(
-        "Produtos", list(PRODUTOS), default=list(itens), key="itens_sel",
+    escolhidos = multiselect_sem_todos(
+        "Produtos", list(PRODUTOS), default=list(itens), key=f"itens_sel_{versao}",
         format_func=lambda p: f"{p}  ×{itens[p]}" if p in itens else p,
-        help="Ao adicionar um item, o app pergunta a quantidade. "
-             "Para mudar depois, remova o item e adicione de novo.")
+        help="Ao adicionar um item, o app pergunta a quantidade.")
 
-    for p in list(itens):  # itens removidos da barra
-        if p not in escolhidos:
+    removidos = [p for p in itens if p not in escolhidos]
+    if removidos:
+        for p in removidos:
             del itens[p]
-            perguntados.discard(p)
-    pendentes = [p for p in escolhidos if p not in itens]
-    if pendentes:
-        p = pendentes[0]
-        if p in perguntados:  # fechou a janela sem responder: assume 1 unidade
-            itens[p] = 1
-            perguntados.discard(p)
-        else:
-            perguntados.add(p)
-            perguntar_quantidade(p)
+        st.session_state["itens_versao"] += 1
+        st.rerun()
+    novos = [p for p in escolhidos if p not in itens]
+    if novos:
+        perguntar_quantidade(novos[0])
     quantidades = {p: itens[p] for p in escolhidos if p in itens}
+
+    if itens:
+        with st.popover("✏️ Alterar quantidade"):
+            alvo = st.selectbox("Item", list(itens), key=f"alvo_{versao}")
+            nova = st.number_input("Nova quantidade", 1, 500, itens[alvo], 1,
+                                   key=f"nq_{versao}_{alvo}")
+            if st.button("Salvar quantidade"):
+                itens[alvo] = int(nova)
+                st.session_state["itens_versao"] += 1
+                st.rerun()
 else:
     meus_produtos = {n: receita_por_unidade(r)
                      for n, r in obter_produtos(st.session_state.usuario).items()}
@@ -651,13 +702,22 @@ else:
         st.success(st.session_state.pop("msg_produto"))
 
     if meus_produtos:
-        sel = st.multiselect("Produtos que vou fabricar", [NOVO_PRODUTO] + list(meus_produtos),
-                             key="prod_sel", help="Escolha produtos já salvos ou use a opção Novo produto.")
+        col_barra, col_lixo = st.columns([11, 1])
+        with col_barra:
+            sel = multiselect_sem_todos(
+                "Produtos que vou fabricar", [NOVO_PRODUTO] + list(meus_produtos),
+                key="prod_sel", help="Escolha produtos já salvos ou use a opção Novo produto.")
         criando = NOVO_PRODUTO in sel
         sel = [p for p in sel if p != NOVO_PRODUTO]
-        with st.expander("🗑️ Excluir produto salvo"):
-            st.selectbox("Produto", [""] + list(meus_produtos), key="del_prod")
-            st.button("🗑️ Excluir", on_click=_excluir_cb)
+        with col_lixo:
+            st.markdown("<div style='height:1.8rem'></div>", unsafe_allow_html=True)
+            with st.popover("🗑️", help="Apagar uma receita salva"):
+                st.caption("Apagar receita")
+                for nome_salvo in meus_produtos:
+                    c_nome, c_btn = st.columns([5, 1])
+                    c_nome.write(nome_salvo)
+                    if c_btn.button("🗑️", key=f"apagar_{nome_salvo}", help=f"Apagar {nome_salvo}"):
+                        confirmar_exclusao(nome_salvo)
     else:
         st.info("Você ainda não tem produtos salvos. Crie o primeiro abaixo ou use o exemplo.")
         st.button("✨ Adicionar produto de exemplo", on_click=_exemplo_cb)
@@ -669,11 +729,23 @@ else:
             st.text_input("Nome do produto", key="novo_nome", placeholder="Ex.: Bolo de cenoura")
             st.number_input("Quantas unidades essa receita rende?", 1, 10000, 10, 1, key="novo_rend",
                             help="Ex.: se a receita completa rende 10 bolos, digite 10.")
-            ings = st.multiselect("Insumos da receita", list(PRODUTOS), key="novo_ings")
-            if ings:
-                st.caption("Quantas unidades de cada insumo a receita usa? (ex.: 2 = duas embalagens)")
-            for ing in ings:
-                st.number_input(ing, 1, 100, 1, 1, key=f"rc_{ing}")
+            rec = st.session_state.setdefault("rec_itens", {})
+            rv = st.session_state.setdefault("rec_versao", 0)
+            escolhidos_rec = multiselect_sem_todos(
+                "Insumos da receita", list(PRODUTOS), default=list(rec), key=f"rec_sel_{rv}",
+                format_func=lambda p: f"{p}  ×{rec[p]}" if p in rec else p,
+                help="Ao adicionar um insumo, o app pergunta quantas unidades a receita usa.")
+            removidos_rec = [p for p in rec if p not in escolhidos_rec]
+            if removidos_rec:
+                for p in removidos_rec:
+                    del rec[p]
+                st.session_state["rec_versao"] += 1
+                st.rerun()
+            novos_rec = [p for p in escolhidos_rec if p not in rec]
+            if novos_rec:
+                perguntar_insumo(novos_rec[0])
+            if rec:
+                alterar_quantidade(rec, "rec_versao", rv, "rec")
             st.button("💾 Salvar produto", on_click=_salvar_produto_cb)
 
     if meus_produtos:
