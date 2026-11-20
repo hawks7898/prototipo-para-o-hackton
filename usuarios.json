@@ -4,5 +4,16 @@
     "hash": "2d6d613537777be36b9d2ac0ecefa083014b3e32376d391168d7a68812ac6c1b",
     "criado_em": "2026-11-14 19:29:25",
     "produtos": {}
+  },
+  "relkuf7yqewyifgdeiwy@gmail.com": {
+    "salt": "5849dd7207d7a6e74d64130dc1a0c9ea",
+    "hash": "d8ea7096ccb64684535fa9f82273a42088ab02fe7b399d80c85d5145776a7c21",
+    "criado_em": "2026-11-18 18:07:56"
+  },
+  "robson.martins119xk@gmail.com": {
+    "salt": "3d39adabe3722cd6f5ce218abcb7d539",
+    "hash": "845d9e38e2c520fff7610163fa9e7d8edd80812b87f23130913b883a05a56755",
+    "veiculo": "eletrico",
+    "criado_em": "2026-11-18 21:57:00"
   }
 }
