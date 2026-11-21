@@ -545,10 +545,16 @@ CSS_BASE = r"""
 
 """
 
+# O mesmo degradê preto/rosa das preferências em todas as telas.
+FUNDO_GRADIENTE = (".stApp{background:"
+                   "radial-gradient(ellipse 65% 88% at 46% 43%,rgba(124,80,80,.91) 0%,"
+                   "rgba(63,39,39,.54) 56%,transparent 98%) center / cover fixed,"
+                   "linear-gradient(120deg,#080809 0%,#3a2626 48%,#060607 100%) center / cover fixed}")
+
 CSS_FUNDOS = {
-    "app": ".stApp{background:radial-gradient(110% 80% at 28% 0%,#4a3939 0%,#271d1d 42%,#0e0a0a 100%) fixed}",
-    "preferencias": ".stApp{background:radial-gradient(ellipse 65% 88% at 46% 43%,rgba(124,80,80,.91) 0%,rgba(63,39,39,.54) 56%,transparent 98%),linear-gradient(120deg,#080809 0%,#3a2626 48%,#060607 100%) fixed}",
-    "hero": ".stApp{background:radial-gradient(75% 110% at 50% 50%,#6d4d4d 0%,#2c1e1e 55%,#000 100%) fixed}" + r"""
+    "app": FUNDO_GRADIENTE,
+    "preferencias": FUNDO_GRADIENTE,
+    "hero": FUNDO_GRADIENTE + r"""
 .stApp [data-baseweb="input"],.stApp [data-baseweb="base-input"]{background:transparent!important;border:1px solid var(--linha)!important}
 .stApp [data-baseweb="input"] input{color:var(--txt)!important}
 .stApp input::placeholder{color:var(--txt)!important;opacity:.8}
