@@ -42,7 +42,11 @@
         "modalidade": "Retirar",
         "custo": 21.91293818181818
       }
-    ]
+    ],
+    "catalogo": [
+      "Óleo de soja 900 ml"
+    ],
+    "veiculo": "comum"
   },
   "relkuf7yqewyifgdeiwy@gmail.com": {
     "salt": "5849dd7207d7a6e74d64130dc1a0c9ea",

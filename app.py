@@ -289,11 +289,265 @@ CSS_BASE = r"""
   border-radius:0 999px 999px 0!important;
   padding:.38rem .7rem!important;
 }
+/* Preferências: layout fiel ao protótipo, com três painéis proporcionais. */
+.st-key-pref_pagina{
+  width:100%!important;max-width:1150px!important;margin:0 auto!important;
+  padding-top:clamp(.65rem,2.5vh,1.6rem)!important;
+}
+.pref-brand{display:flex;justify-content:center;margin:1.05rem 0 .35rem!important}
+.pref-brand .logo-img{height:clamp(38px,4.8vw,56px)!important}
+.pref-heading{
+  text-align:center;text-transform:uppercase;color:#cfd3d9;font-weight:400;
+  font-size:clamp(2.15rem,3.6vw,3.25rem);line-height:1.08;
+  margin:.25rem 0 .95rem!important;
+}
+.pref-heading span{font-size:.42em;vertical-align:baseline;font-weight:600;white-space:nowrap}
+.pref-card-title{font-size:clamp(1.5rem,2.35vw,2.1rem);color:#d0d3da;
+  text-align:center;text-transform:uppercase;line-height:1.12;margin:0!important}
+.pref-card-sub{font-size:1rem;color:#cbd0d5;text-align:center;text-transform:uppercase;
+  margin:0 0 .5rem!important;line-height:1.15}
+.pref-card-sub.req{color:#f03a47}
+.st-key-pref_card_local,.st-key-pref_card_endereco,.st-key-pref_card_modalidade,
+.st-key-pref_card_veiculo,.st-key-pref_card_custos,.st-key-pref_card_multi,
+.st-key-pref_card_lojas,.st-key-pref_card_catalogo,.st-key-pref_card_conta{
+  background:transparent!important;border:1.5px solid #c9cbd2!important;
+  border-radius:34px!important;padding:1rem 1rem 1.2rem!important;
+  min-height:clamp(250px,45vh,345px)!important;
+}
+/* Retira o espaço extra que o Streamlit coloca entre título, campo e rádio. */
+.st-key-pref_card_local [data-testid="stVerticalBlock"],
+.st-key-pref_card_endereco [data-testid="stVerticalBlock"],
+.st-key-pref_card_modalidade [data-testid="stVerticalBlock"],
+.st-key-pref_card_veiculo [data-testid="stVerticalBlock"],
+.st-key-pref_card_custos [data-testid="stVerticalBlock"],
+.st-key-pref_card_multi [data-testid="stVerticalBlock"],
+.st-key-pref_card_lojas [data-testid="stVerticalBlock"],
+.st-key-pref_card_catalogo [data-testid="stVerticalBlock"],
+.st-key-pref_card_conta [data-testid="stVerticalBlock"]{gap:.55rem!important}
+.st-key-pref_pagina [data-testid="stWidgetLabel"] p{
+  font-size:1rem!important;letter-spacing:.01em!important;line-height:1.15!important;
+}
+.st-key-pref_pagina [data-testid="stWidgetLabel"]{margin-bottom:.25rem!important}
+/* Inputs e caixas escuras em formato de pílula, como no vídeo. */
+.st-key-pref_pagina [data-testid="stTextInput"] [data-baseweb="input"],
+.st-key-pref_pagina [data-testid="stTextInput"] [data-baseweb="base-input"],
+.st-key-pref_pagina [data-baseweb="input"],
+.st-key-pref_pagina [data-baseweb="base-input"],
+.st-key-pref_pagina [data-baseweb="select"]>div{
+  background:#242424!important;border:0!important;box-shadow:none!important;
+  border-radius:999px!important;min-height:2.5rem!important;
+}
+.st-key-pref_pagina [data-baseweb="input"] input,
+.st-key-pref_pagina [data-baseweb="base-input"] input{
+  color:#e9e9eb!important;font-size:1.13rem!important;min-height:2.5rem!important;
+  padding-top:.2rem!important;padding-bottom:.2rem!important;
+}
+.st-key-pref_pagina [data-baseweb="select"] div{color:#e9e9eb;font-size:1.13rem!important}
+.st-key-pref_pagina [data-baseweb="select"] input,
+.st-key-pref_pagina [data-baseweb="select"] span{font-size:1.13rem!important}
+.st-key-pref_pagina [data-baseweb="input"] input::placeholder,
+.st-key-pref_pagina [data-baseweb="base-input"] input::placeholder{
+  font-size:1.13rem!important;color:#d8d8dc!important;
+}
+
+.st-key-pref_pagina input::placeholder{color:#c7c8ca!important;opacity:1!important}
+/* Modalidade: cada alternativa vira uma faixa escura de largura igual. */
+.st-key-pref_card_modalidade [role="radiogroup"]{gap:.42rem!important}
+.st-key-pref_card_modalidade [role="radiogroup"] label{
+  display:flex!important;align-items:center!important;box-sizing:border-box!important;
+  width:100%!important;min-height:2.45rem!important;padding:.28rem .8rem!important;
+  background:#242424!important;border-radius:999px!important;margin:0!important;
+}
+.st-key-pref_card_modalidade [role="radiogroup"] label p{
+  font-size:1.07rem!important;line-height:1.15!important;text-transform:uppercase!important;
+}
+.st-key-pref_card_modalidade [role="radiogroup"] label > div:first-child{flex-shrink:0}
+/* Opções que já existiam continuam disponíveis, sem poluir o cartão principal. */
+.st-key-pref_extra_local button,.st-key-pref_extra_endereco button{
+  background:transparent!important;border:0!important;min-height:1.65rem!important;
+  padding:.2rem .25rem!important;box-shadow:none!important;
+  color:#bdc0c5!important;
+}
+.st-key-pref_extra_local button p,.st-key-pref_extra_endereco button p{
+  font-size:.94rem!important;letter-spacing:0!important;text-transform:none!important;
+}
+.pref-nota{text-align:center;font-size:.9rem;line-height:1.12;color:#cfd1d8;
+  text-transform:uppercase;margin:.15rem 0 .25rem!important}
+.pref-footer{text-align:center;font-size:clamp(.9rem,1.35vw,1.16rem);
+  text-transform:uppercase;color:#d5d5dd;white-space:normal;line-height:1.2}
+.pref-footer span{color:#f03a47}
+/* X no alto à direita das preferências, sem alterar o alinhamento dos cartões. */
+.st-key-pref_pagina{position:relative!important}
+.st-key-pref_fechar_topo{
+  position:absolute!important;right:.15rem;top:.25rem;z-index:30!important;
+  width:auto!important;margin:0!important;padding:0!important;
+}
+.st-key-pref_fechar_topo [data-testid="stButton"]{width:auto!important}
+.st-key-pref_fechar_topo button,
+.st-key-pref_fechar_topo button[kind="secondary"]{
+  display:flex!important;align-items:center!important;justify-content:center!important;
+  width:2.8rem!important;height:2.8rem!important;min-width:2.8rem!important;min-height:2.8rem!important;
+  padding:0!important;border:none!important;box-shadow:none!important;
+  background:transparent!important;color:#d8d9dd!important;border-radius:999px!important;
+}
+.st-key-pref_fechar_topo button:hover{
+  color:#f03a47!important;background:rgba(240,58,71,.13)!important;
+}
+.st-key-pref_fechar_topo button p,
+.st-key-pref_fechar_topo [data-testid="stMarkdownContainer"] p{
+  font-size:1.7rem!important;line-height:1!important;margin:0!important;
+  color:inherit!important;
+}
+@media(max-width:800px){
+  .st-key-pref_fechar_topo{right:.25rem;top:.1rem}
+  .st-key-pref_fechar_topo button{width:2.6rem!important;height:2.6rem!important}
+  .pref-brand{padding-left:2rem;padding-right:2rem}
+}
+
+/* Escala uniforme nas três etapas das preferências (não afeta a pesquisa). */
+.st-key-pref_card_local,.st-key-pref_card_endereco,.st-key-pref_card_modalidade,
+.st-key-pref_card_veiculo,.st-key-pref_card_custos,.st-key-pref_card_multi,
+.st-key-pref_card_lojas,.st-key-pref_card_catalogo,.st-key-pref_card_conta{
+  min-height:clamp(300px,47vh,370px)!important;
+  padding:1.08rem 1.12rem 1.25rem!important;
+}
+.st-key-pref_pagina [data-testid="stWidgetLabel"] p{
+  font-size:1.07rem!important;line-height:1.25!important;
+}
+.st-key-pref_pagina [data-baseweb="input"],
+.st-key-pref_pagina [data-baseweb="base-input"],
+.st-key-pref_pagina [data-baseweb="select"]>div{
+  min-height:2.95rem!important;
+}
+.st-key-pref_pagina [data-baseweb="input"] input,
+.st-key-pref_pagina [data-baseweb="base-input"] input{
+  min-height:2.95rem!important;
+  font-size:1.15rem!important;
+}
+.st-key-pref_pagina [data-baseweb="select"] div,
+.st-key-pref_pagina [data-baseweb="select"] span,
+.st-key-pref_pagina [data-baseweb="select"] input{
+  font-size:1.13rem!important;
+}
+/* Etapa 1: o tamanho das alternativas acompanha os demais controles. */
+.st-key-pref_card_modalidade [role="radiogroup"] label{
+  min-height:2.75rem!important;padding:.38rem .75rem!important;
+}
+.st-key-pref_card_modalidade [role="radiogroup"] label p{font-size:1.13rem!important}
+/* Etapa 2: veículo com as mesmas faixas e leitura da modalidade. */
+.st-key-pref_card_veiculo [role="radiogroup"]{gap:.48rem!important}
+.st-key-pref_card_veiculo [role="radiogroup"] label{
+  display:flex!important;align-items:center!important;box-sizing:border-box!important;
+  background:#242424!important;border-radius:999px!important;
+  width:100%!important;min-height:2.75rem!important;
+  padding:.38rem .75rem!important;margin:0!important;
+}
+.st-key-pref_card_veiculo [role="radiogroup"] label p{
+  font-size:1.13rem!important;line-height:1.25!important;
+}
+.st-key-pref_card_veiculo [role="radiogroup"] label>div:first-child{flex-shrink:0}
+/* Etapa 2: valor do combustível/energia, consumo e botões +/-. */
+.st-key-pref_card_custos [data-testid="stNumberInput"] [data-baseweb="input"],
+.st-key-pref_card_custos [data-testid="stNumberInput"] [data-baseweb="base-input"]{
+  min-height:2.95rem!important;overflow:hidden!important;border-radius:999px!important;
+}
+.st-key-pref_card_custos [data-testid="stNumberInput"] input{
+  min-height:2.95rem!important;font-size:1.15rem!important;
+  padding-left:1rem!important;
+}
+.st-key-pref_card_custos [data-testid="stNumberInput"] button{
+  min-height:2.6rem!important;min-width:2.45rem!important;
+  padding:.25rem!important;
+}
+/* Etapa 2: a opção de combinar mercados não pode ficar em letra minúscula. */
+.st-key-pref_card_multi [data-testid="stCheckbox"] label{
+  display:flex!important;align-items:center!important;
+  background:#242424!important;border-radius:18px!important;
+  padding:.6rem .7rem!important;min-height:3.1rem!important;
+}
+.st-key-pref_card_multi [data-testid="stCheckbox"] label p{
+  font-size:1.08rem!important;line-height:1.3!important;
+}
+/* Legendas das etapas 2 e 3: explicações e status também legíveis. */
+.st-key-pref_pagina [data-testid="stCaptionContainer"],
+.st-key-pref_pagina [data-testid="stCaptionContainer"] p{
+  font-size:1.03rem!important;line-height:1.37!important;
+  color:#cdd0d5!important;
+}
+/* Etapa 3: mercados e catálogo, incluindo seletor e botão de salvar. */
+.st-key-pref_card_lojas [data-baseweb="select"]>div,
+.st-key-pref_card_catalogo [data-baseweb="select"]>div{
+  min-height:3rem!important;
+  border-radius:20px!important;
+  padding-top:.15rem!important;padding-bottom:.15rem!important;
+}
+.st-key-pref_card_lojas [data-baseweb="tag"] span,
+.st-key-pref_card_catalogo [data-baseweb="tag"] span{font-size:1.02rem!important}
+.st-key-pref_card_catalogo [data-testid="stButton"] button,
+.st-key-pref_card_conta [data-testid="stButton"] button{
+  min-height:3rem!important;padding:.52rem .95rem!important;
+}
+.st-key-pref_card_catalogo [data-testid="stButton"] button p,
+.st-key-pref_card_conta [data-testid="stButton"] button p{
+  font-size:1.08rem!important;line-height:1.25!important;
+}
+.st-key-pref_card_conta [data-testid="stMarkdownContainer"] p{
+  font-size:1.09rem!important;line-height:1.3!important;overflow-wrap:anywhere;
+}
+/* Ícone de engrenagem da barra superior: aumenta o próprio símbolo, não só o botão. */
+.st-key-btn_cfg button{
+  min-width:3.1rem!important;min-height:3.1rem!important;
+  padding:.08rem .24rem!important;
+  font-size:2.2rem!important;
+  line-height:1!important;
+}
+.st-key-btn_cfg button p,
+.st-key-btn_cfg [data-testid="stMarkdownContainer"] p{
+  font-size:2.2rem!important;line-height:1!important;
+  margin:0!important;
+}
+
+/* ÚNICA navegação: VOLTAR à esquerda e PULAR à direita. */
+.st-key-pref_btn_voltar button,.st-key-pref_btn_pular button{
+  background:transparent!important;border:0!important;box-shadow:none!important;
+  padding:.25rem .1rem!important;min-height:2.1rem!important;
+}
+.st-key-pref_btn_voltar button{justify-content:flex-start!important}
+.st-key-pref_btn_pular button{justify-content:flex-end!important;width:100%!important}
+.st-key-pref_btn_voltar button p{font-size:1rem!important;color:#dbdde0!important}
+.st-key-pref_btn_pular button p{font-size:1.18rem!important;color:#f03a47!important}
+.st-key-btn_cfg button{border:none!important;background:transparent!important;padding:0 .25rem!important;
+  color:var(--txt)!important;font-size:1.55rem!important;min-width:2.4rem!important}
+.st-key-btn_cfg button:hover{color:var(--verm)!important}
+@media(max-width:800px){
+ .st-key-pref_pagina{padding-top:.4rem!important}
+ .pref-brand{margin:.35rem 0!important}
+ .pref-heading{margin:.2rem 0 .7rem!important;font-size:clamp(1.9rem,5vw,2.8rem)}
+ .st-key-pref_card_local,.st-key-pref_card_endereco,.st-key-pref_card_modalidade,
+ .st-key-pref_card_veiculo,.st-key-pref_card_custos,.st-key-pref_card_multi,
+ .st-key-pref_card_lojas,.st-key-pref_card_catalogo,.st-key-pref_card_conta{
+   min-height:0!important;padding:1rem!important;border-radius:27px!important;
+ }
+ .pref-footer{font-size:.85rem}
+}
 .st-key-ini_criar button p,.st-key-ini_login button p{font-size:1rem!important}
+@media (max-width:800px){
+  .pref-card-title{font-size:clamp(1.45rem,4vw,1.95rem)!important}
+  .pref-card-sub{font-size:.95rem!important}
+  .st-key-pref_pagina [data-testid="stWidgetLabel"] p{font-size:1rem!important}
+  .st-key-pref_pagina [data-baseweb="select"] div,
+  .st-key-pref_pagina [data-baseweb="select"] input,
+  .st-key-pref_pagina [data-baseweb="input"] input,
+  .st-key-pref_card_modalidade [role="radiogroup"] label p,
+  .st-key-pref_card_veiculo [role="radiogroup"] label p,
+  .st-key-pref_card_multi [data-testid="stCheckbox"] label p{font-size:1.02rem!important}
+}
+
 """
 
 CSS_FUNDOS = {
     "app": ".stApp{background:radial-gradient(110% 80% at 28% 0%,#4a3939 0%,#271d1d 42%,#0e0a0a 100%) fixed}",
+    "preferencias": ".stApp{background:radial-gradient(ellipse 65% 88% at 46% 43%,rgba(124,80,80,.91) 0%,rgba(63,39,39,.54) 56%,transparent 98%),linear-gradient(120deg,#080809 0%,#3a2626 48%,#060607 100%) fixed}",
     "hero": ".stApp{background:radial-gradient(75% 110% at 50% 50%,#6d4d4d 0%,#2c1e1e 55%,#000 100%) fixed}" + r"""
 .stApp [data-baseweb="input"],.stApp [data-baseweb="base-input"]{background:transparent!important;border:1px solid var(--linha)!important}
 .stApp [data-baseweb="input"] input{color:var(--txt)!important}
@@ -1187,13 +1441,254 @@ def alterar_quantidade(itens, chave_versao, versao, prefixo):
 
 
 # ------------------------------------------------------------------
-# PREFERÊNCIAS (obrigatórias e opcionais)
+# PREFERÊNCIAS: tela de três etapas, com os mesmos filtros da pesquisa.
 # ------------------------------------------------------------------
+def _prefs_usuario(email):
+    """Cópia persistente na sessão: os widgets das etapas podem ser desmontados."""
+    if st.session_state.get("pref_dono") != email:
+        st.session_state["pref_dono"] = email
+        st.session_state["pref_dados"] = {
+            "cidade": "Piracicaba", "bairro": "Centro", "modo_origem": "Bairro",
+            "cep": "", "numero": "", "rua": "", "modalidade": "Ambas",
+            "preferidos": [], "veiculo": obter_veiculo(email),
+            "preco_energia": 0.90, "consumo_ev": 6.0,
+            "combustivel": 6.20, "consumo": 11.0,
+            "multi_comum": False, "multi_eletrico": True,
+        }
+    return st.session_state["pref_dados"]
+
+
+def _pref_sync(campo):
+    """Guarda o widget fora da árvore atual para não perder valor entre etapas."""
+    valor = st.session_state.get("cfg_" + campo)
+    st.session_state["pref_dados"][campo] = valor
+    if campo == "veiculo":
+        salvar_veiculo(st.session_state.usuario, valor)
+
+
+def _pref_abrir():
+    st.session_state["cfg_pagina_anterior"] = st.session_state.get("pagina", PAGINA_PESQUISA)
+    st.session_state["cfg_aberta"] = True
+    st.session_state["cfg_etapa"] = 1
+
+
+def _pref_fechar():
+    st.session_state["cfg_aberta"] = False
+    st.session_state["pagina"] = st.session_state.get("cfg_pagina_anterior", PAGINA_PESQUISA)
+
+
+def _pref_avancar():
+    etapa = st.session_state.get("cfg_etapa", 1)
+    if etapa >= 3:
+        _pref_fechar()
+    else:
+        st.session_state["cfg_etapa"] = etapa + 1
+
+
+def _pref_voltar():
+    etapa = st.session_state.get("cfg_etapa", 1)
+    if etapa <= 1:
+        _pref_fechar()
+    else:
+        st.session_state["cfg_etapa"] = etapa - 1
+
+
+def _pref_selecionar(label, campo, opcoes, **kwargs):
+    valor = st.session_state["pref_dados"].get(campo)
+    indice = opcoes.index(valor) if valor in opcoes else 0
+    return st.selectbox(label, opcoes, index=indice, key="cfg_" + campo,
+                        on_change=_pref_sync, args=(campo,), **kwargs)
+
+
+def _pref_texto(label, campo, **kwargs):
+    return st.text_input(label, value=st.session_state["pref_dados"].get(campo, ""),
+                         key="cfg_" + campo, on_change=_pref_sync, args=(campo,), **kwargs)
+
+
+def _pref_numero(label, campo, minimo, maximo, passo):
+    return st.number_input(label, min_value=float(minimo), max_value=float(maximo),
+                           value=float(st.session_state["pref_dados"][campo]),
+                           step=float(passo), key="cfg_" + campo,
+                           on_change=_pref_sync, args=(campo,))
+
+
+def _pref_titulo_card(titulo_card, descricao="(OPCIONAL)", obrigatorio=False):
+    classe = "pref-card-sub req" if obrigatorio else "pref-card-sub"
+    st.markdown(f"<div class='pref-card-title'>{esc(titulo_card)}</div>"
+                f"<div class='{classe}'>{esc(descricao)}</div>", unsafe_allow_html=True)
+
+
+def _tela_preferencias(email):
+    """Três etapas no layout da referência, sem mudar os filtros da pesquisa."""
+    preferencias = _prefs_usuario(email)
+    etapa = min(3, max(1, st.session_state.get("cfg_etapa", 1)))
+    with caixa("pref_pagina"):
+        # Fechar preferências sem alterar as etapas ou os filtros salvos.
+        with caixa("pref_fechar_topo"):
+            st.button("✕", key="cfg_fechar_topo", on_click=_pref_fechar,
+                      help="Fechar configurações e voltar ao Buscaí")
+        st.markdown("<div class='pref-brand'>" + logo_html(54) + "</div>",
+                    unsafe_allow_html=True)
+        st.markdown(f"<div class='pref-heading'>Preferências <span>{etapa}/3</span></div>",
+                    unsafe_allow_html=True)
+
+        esquerda, meio, direita = st.columns(3, gap="large")
+        if etapa == 1:
+            with esquerda:
+                with caixa("pref_card_local", border=True):
+                    _pref_titulo_card("Localização", "(OBRIGATÓRIO)", True)
+                    _pref_selecionar("Cidade", "cidade", ["Piracicaba"])
+                    # Mantém os ajustes existentes acessíveis sem aumentar o cartão.
+                    with caixa("pref_extra_local"):
+                        with st.popover("⌄ Ajustar origem do trajeto"):
+                            _pref_selecionar("Bairro", "bairro", list(BAIRROS))
+                            _pref_selecionar("Origem para o trajeto", "modo_origem",
+                                            ["Bairro", "Endereço completo", "Não informar"])
+                            st.caption("Nesta versão, a pesquisa atende Piracicaba.")
+            with meio:
+                with caixa("pref_card_endereco", border=True):
+                    _pref_titulo_card("Endereço")
+                    _pref_texto("CEP", "cep", placeholder="DIGITE")
+                    _pref_texto("Número", "numero", placeholder="DIGITE")
+                    with caixa("pref_extra_endereco"):
+                        with st.popover("⌄ Complementar endereço"):
+                            _pref_texto("Rua / avenida", "rua", placeholder="DIGITE")
+                            st.caption("Para usar o endereço no cálculo, escolha "
+                                       "'Endereço completo' em Ajustar origem do trajeto.")
+            with direita:
+                with caixa("pref_card_modalidade", border=True):
+                    _pref_titulo_card("Modalidade")
+                    st.radio("Como prefere comprar?",
+                             ["Receber por entrega", "Retirar na loja", "Ambas"],
+                             index=["Receber por entrega", "Retirar na loja", "Ambas"].index(
+                                 preferencias["modalidade"]),
+                             format_func=lambda opcao: {
+                                 "Receber por entrega": "SOMENTE ENTREGA",
+                                 "Retirar na loja": "SOMENTE RETIRADA",
+                                 "Ambas": "AMBOS"}[opcao],
+                             key="cfg_modalidade", on_change=_pref_sync,
+                             args=("modalidade",), label_visibility="collapsed")
+            st.markdown("<div class='pref-nota'>*Os dados coletados serão usados apenas para o "
+                        "<br>cálculo de trajetos.</div>", unsafe_allow_html=True)
+
+        elif etapa == 2:
+            with esquerda:
+                with caixa("pref_card_veiculo", border=True):
+                    _pref_titulo_card("Veículo")
+                    st.radio("Tipo de veículo", list(VEICULOS),
+                             index=list(VEICULOS).index(preferencias["veiculo"]),
+                             format_func=VEICULOS.get, key="cfg_veiculo",
+                             on_change=_pref_sync, args=("veiculo",),
+                             label_visibility="collapsed")
+                    st.caption("Usado para calcular os gastos de ida e volta.")
+            with meio:
+                with caixa("pref_card_custos", border=True):
+                    _pref_titulo_card("Custo de trajeto")
+                    if preferencias["veiculo"] == "eletrico":
+                        _pref_numero("Preço da energia (R$/kWh)", "preco_energia", 0.10, 10.0, 0.05)
+                        _pref_numero("Consumo do veículo (km/kWh)", "consumo_ev", 1.0, 15.0, 0.5)
+                    else:
+                        _pref_numero("Preço do combustível (R$/L)", "combustivel", 3.0, 10.0, 0.10)
+                        _pref_numero("Consumo do veículo (km/L)", "consumo", 3.0, 30.0, 0.5)
+            with direita:
+                with caixa("pref_card_multi", border=True):
+                    _pref_titulo_card("Combinar mercados")
+                    campo = "multi_eletrico" if preferencias["veiculo"] == "eletrico" else "multi_comum"
+                    st.checkbox(f"Mercados próximos (raio de {RAIO_MULTIPLOS_KM} km)",
+                                value=bool(preferencias[campo]), key="cfg_" + campo,
+                                on_change=_pref_sync, args=(campo,),
+                                help="Combina as ofertas de vários mercados próximos.")
+                    st.caption("Sugere comprar em mais de um estabelecimento quando compensa.")
+                    st.caption(f"{'✅' if segredo('ANTHROPIC_API_KEY') else '⚪'} Interpretação de endereço")
+                    st.caption(f"{'✅' if segredo('ORS_API_KEY') else '⚪'} Rotas reais")
+        else:
+            with esquerda:
+                with caixa("pref_card_lojas", border=True):
+                    _pref_titulo_card("Mercados")
+                    multiselect_sem_todos("Estabelecimentos preferenciais",
+                                          [loja["nome"] for loja in LOJAS],
+                                          default=[p for p in preferencias["preferidos"]
+                                                   if p in [loja["nome"] for loja in LOJAS]],
+                                          key="cfg_preferidos", on_change=_pref_sync,
+                                          args=("preferidos",), placeholder="SELECIONE")
+                    st.caption("Deixe vazio para incluir todos os mercados.")
+            with meio:
+                with caixa("pref_card_catalogo", border=True):
+                    _pref_titulo_card("Catálogo")
+                    st.caption("Seus produtos frequentes aparecem primeiro na pesquisa.")
+                    if "msg_catalogo" in st.session_state:
+                        st.success(st.session_state.pop("msg_catalogo"))
+                    salvo = [p for p in obter_catalogo(email) if p in PRODUTOS]
+                    multiselect_sem_todos("Itens do catálogo", list(PRODUTOS), default=salvo,
+                                          key="catalogo_sel", placeholder="SELECIONE")
+                    st.button("💾 Salvar catálogo", type="primary", key="cfg_salvar_cat",
+                              on_click=_salvar_catalogo_cb)
+            with direita:
+                with caixa("pref_card_conta", border=True):
+                    _pref_titulo_card("Sua conta", "(PERFIL)")
+                    st.caption("Usuário conectado")
+                    st.write(email)
+                    if st.button("Sair da conta", key="cfg_logout"):
+                        st.session_state.clear()
+                        st.rerun()
+
+        # Um botão por lado: sem duplicar o avanço da etapa.
+        rod_voltar, rod_rodape, rod_pular = st.columns([1.15, 5, 1.15], gap="small")
+        with rod_voltar:
+            with caixa("pref_btn_voltar"):
+                st.button("‹ VOLTAR", key="cfg_voltar", on_click=_pref_voltar)
+        with rod_rodape:
+            st.markdown("<div class='pref-footer'>Essas opções podem ser modificadas "
+                        "<span>depois</span></div>", unsafe_allow_html=True)
+        with rod_pular:
+            with caixa("pref_btn_pular"):
+                st.button("PULAR ❯" if etapa < 3 else "CONCLUIR ❯", key="cfg_pular",
+                          on_click=_pref_avancar)
+
+
 # ------------------------------------------------------------------
 # PÁGINA PRINCIPAL
 # ------------------------------------------------------------------
-aplicar_estilo("app")
 usuario_atual = st.session_state.usuario
+preferencias = _prefs_usuario(usuario_atual)
+configuracoes_abertas = st.session_state.get("cfg_aberta", False)
+aplicar_estilo("preferencias" if configuracoes_abertas else "app")
+if configuracoes_abertas:
+    _tela_preferencias(usuario_atual)
+    st.stop()
+
+# Os mesmos valores alimentam os cálculos da pesquisa (fora da tela de preferências).
+modalidade = preferencias["modalidade"]
+preferidos = preferencias["preferidos"]
+veiculo = preferencias["veiculo"]
+multi_ativo = preferencias["multi_eletrico" if veiculo == "eletrico" else "multi_comum"]
+custo_km = (preferencias["preco_energia"] / preferencias["consumo_ev"] if veiculo == "eletrico"
+            else preferencias["combustivel"] / preferencias["consumo"])
+
+origem_coord, origem_label = None, "não informada"
+modo_origem = preferencias["modo_origem"]
+if modo_origem == "Bairro":
+    bairro = preferencias["bairro"]
+    origem_coord, origem_label = BAIRROS[bairro], bairro
+elif modo_origem == "Endereço completo":
+    origem_coord, origem_label = BAIRROS["Centro"], "Centro (padrão)"
+    cep = preferencias["cep"].strip()
+    numero = preferencias["numero"].strip()
+    rua = preferencias["rua"].strip()
+    endereco = ", ".join(parte for parte in (rua, numero, preferencias["bairro"],
+                                             "Piracicaba - SP", f"CEP {cep}" if cep else "") if parte)
+    if rua or cep:
+        st.session_state.pop("geo_erro", None)
+        with st.spinner("Entendendo o endereço..."):
+            padrao = padronizar_endereco(endereco) if rua else endereco
+            achado = geocodificar(padrao)
+            if not achado and padrao != endereco:
+                achado = geocodificar(endereco)
+        if achado:
+            origem_coord, origem_label = achado[:2], padrao
+        else:
+            st.warning("Não encontrei o endereço configurado. Usando o Centro como origem. "
+                       "Você pode corrigir o endereço nas Preferências.")
 
 # ---------------- barra superior: logo, navegação, "?" (como usar) e ⚙ (configurações) ----------------
 PAGINAS = [PAGINA_PESQUISA, PAGINA_PRODUTOS, PAGINA_HISTORICO]
@@ -1210,79 +1705,9 @@ with caixa("topbar"):
     with c_ajuda:
         with caixa("btn_ajuda_on" if ajuda_ativa else "btn_ajuda"):
             st.button("?", key="btn_ajuda_b", on_click=_abrir_ajuda_cb, help="Como usar")
-
-    with c_cfg.popover("⚙", help="Preferências e conta"):
-        st.write(f"👤 {usuario_atual}")
-        if st.button("Sair"):
-            st.session_state.clear()
-            st.rerun()
-        aba_pref, aba_cat = st.tabs(["Preferências", "Catálogo"])
-
-        with aba_pref:
-            modalidade = st.radio("Modalidade de compra",
-                                  ["Ambas", "Retirar na loja", "Receber por entrega"])
-            preferidos = multiselect_sem_todos("Estabelecimentos preferenciais (vazio = todos)",
-                                               [l["nome"] for l in LOJAS])
-
-            st.markdown("**📍 Endereço de origem**")
-            modo_origem = st.radio("Informar por", ["Bairro", "Endereço completo", "Não informar"],
-                                   horizontal=True, label_visibility="collapsed")
-            origem_coord, origem_label = None, "não informada"
-            if modo_origem == "Bairro":
-                bairro = st.selectbox("Bairro", list(BAIRROS))
-                origem_coord, origem_label = BAIRROS[bairro], bairro
-            elif modo_origem == "Endereço completo":
-                endereco = st.text_input("Rua, número e bairro",
-                                         placeholder="Ex.: Rua Governador Pedro de Toledo, 1000")
-                origem_coord, origem_label = BAIRROS["Centro"], "Centro (padrão)"
-                if endereco.strip():
-                    st.session_state.pop("geo_erro", None)
-                    with st.spinner("Entendendo o endereço..."):
-                        padrao = padronizar_endereco(endereco.strip())
-                        achado = geocodificar(padrao)
-                        if not achado and padrao != endereco.strip():
-                            achado = geocodificar(endereco.strip())
-                    if achado:
-                        origem_coord, origem_label = achado[:2], padrao
-                        if padrao != endereco.strip():
-                            st.caption(f"🤖 Interpretado como: {padrao}")
-                        st.caption(f"✅ Encontrado: {achado[2]}")
-                    else:
-                        st.warning("Não encontrei esse endereço. Tente no formato: rua, número, bairro "
-                                   "(ex.: Rua Governador Pedro de Toledo, 1000, Centro). "
-                                   "Usando o Centro como origem.")
-                        st.caption(f"Detalhe técnico: {st.session_state.get('geo_erro', '—')}")
-
-            st.caption(f"{'✅' if segredo('ANTHROPIC_API_KEY') else '⚪'} Interpretação de endereço • "
-                       f"{'✅' if segredo('ORS_API_KEY') else '⚪'} Rotas reais")
-
-            st.markdown("**🚗 Veículo**")
-            veiculo = st.radio(
-                "Tipo de veículo", list(VEICULOS), index=list(VEICULOS).index(obter_veiculo(usuario_atual)),
-                format_func=VEICULOS.get, horizontal=True, key=f"veiculo_{usuario_atual}",
-                on_change=_salvar_veiculo_cb, label_visibility="collapsed")
-            if veiculo == "eletrico":
-                preco_energia = st.number_input("Preço da energia (R$/kWh)", 0.10, 10.0, 0.90, 0.05)
-                consumo_ev = st.number_input("Consumo do veículo (km/kWh)", 1.0, 15.0, 6.0, 0.5)
-                custo_km = preco_energia / consumo_ev
-            else:
-                combustivel = st.number_input("Preço do combustível (R$/L)", 3.0, 10.0, 6.20, 0.10)
-                consumo = st.number_input("Consumo do veículo (km/L)", 3.0, 30.0, 11.0, 0.5)
-                custo_km = combustivel / consumo
-
-            multi_ativo = st.checkbox(
-                f"Combinar mercados próximos (raio de {RAIO_MULTIPLOS_KM} km)",
-                value=(veiculo == "eletrico"), key=f"multi_{usuario_atual}_{veiculo}",
-                help="Sugere comprar em mais de um mercado, juntando os melhores preços. "
-                     "Vem ligado por padrão para carros elétricos.")
-
-        with aba_cat:
-            st.caption("Os itens que a sua loja usa com frequência aparecem primeiro na lista da pesquisa.")
-            if "msg_catalogo" in st.session_state:
-                st.success(st.session_state.pop("msg_catalogo"))
-            salvo = [p for p in obter_catalogo(usuario_atual) if p in PRODUTOS]
-            multiselect_sem_todos("Itens do catálogo", list(PRODUTOS), default=salvo, key="catalogo_sel")
-            st.button("💾 Salvar catálogo", type="primary", on_click=_salvar_catalogo_cb)
+    with c_cfg:
+        with caixa("btn_cfg"):
+            st.button("⚙", key="abrir_cfg", on_click=_pref_abrir, help="Preferências e conta")
 
 if pagina is None and not ajuda_ativa:
     pagina = PAGINA_PESQUISA
