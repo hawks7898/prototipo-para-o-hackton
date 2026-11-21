@@ -3,7 +3,46 @@
     "salt": "9e49082f5834ecdbe8f464743d8f6675",
     "hash": "2d6d613537777be36b9d2ac0ecefa083014b3e32376d391168d7a68812ac6c1b",
     "criado_em": "2026-11-14 19:29:25",
-    "produtos": {}
+    "produtos": {
+      "Bolo simples (exemplo)": {
+        "rendimento": 10,
+        "insumos": {
+          "Farinha de trigo 1 kg": 3,
+          "Açúcar 1 kg": 2,
+          "Ovos (dúzia)": 3,
+          "Leite 1 L": 2,
+          "Óleo de soja 900 ml": 1,
+          "Fermento em pó 100 g": 2
+        }
+      }
+    },
+    "historico": [
+      {
+        "data": "21/11/2026 08:01",
+        "tipo": "Meus produtos",
+        "itens": {
+          "Farinha de trigo 1 kg": 1,
+          "Açúcar 1 kg": 1,
+          "Ovos (dúzia)": 1,
+          "Leite 1 L": 1,
+          "Óleo de soja 900 ml": 1,
+          "Fermento em pó 100 g": 1
+        },
+        "melhor": "Assaí Atacadista",
+        "modalidade": "Retirar",
+        "custo": 37.769403636363634
+      },
+      {
+        "data": "21/11/2026 07:59",
+        "tipo": "Pesquisa",
+        "itens": {
+          "Feijão carioca 1 kg": 3
+        },
+        "melhor": "Jaú Serve Supermercados",
+        "modalidade": "Retirar",
+        "custo": 21.91293818181818
+      }
+    ]
   },
   "relkuf7yqewyifgdeiwy@gmail.com": {
     "salt": "5849dd7207d7a6e74d64130dc1a0c9ea",
@@ -15,5 +54,23 @@
     "hash": "845d9e38e2c520fff7610163fa9e7d8edd80812b87f23130913b883a05a56755",
     "veiculo": "eletrico",
     "criado_em": "2026-11-18 21:57:00"
+  },
+  "andrevanced@gmail.com": {
+    "salt": "f6e034d80915a29788368a84be76e21d",
+    "hash": "1b1920b248e2de86a7c2759e31366493e4dd19da5f3177cb61369c46b2d0be23",
+    "veiculo": "eletrico",
+    "criado_em": "2026-11-21 08:57:14",
+    "historico": [
+      {
+        "data": "21/11/2026 08:57",
+        "tipo": "Pesquisa",
+        "itens": {
+          "Feijão carioca 1 kg": 1
+        },
+        "melhor": "Assaí Atacadista",
+        "modalidade": "Retirar",
+        "custo": 7.21218
+      }
+    ]
   }
 }
