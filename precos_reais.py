@@ -22,10 +22,11 @@ import threading
 import time
 import unicodedata
 from dataclasses import asdict, dataclass
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
 from decimal import Decimal, InvalidOperation
 from pathlib import Path
 from urllib.parse import quote, urlparse
+from zoneinfo import ZoneInfo
 
 import requests
 try:
@@ -98,6 +99,9 @@ except (OSError, ValueError, TypeError):
 
 
 LOCK = threading.RLock()
+LOCK_REQUISICAO = threading.Lock()
+LOCKS_PRODUTO = tuple(threading.Lock() for _ in range(32))
+FUSO_PIRACICABA = ZoneInfo('America/Sao_Paulo')
 ULTIMA_REQUISICAO = 0.0
 ROTA_LOJA_INVALIDA = False  # HTTP 400 sugere rota/parâmetro não suportado pela API
 LOJAS_COM_ROTA_404 = set()
@@ -121,6 +125,10 @@ class Cotacao:
     verificacao: str = 'regras_locais'
     loja_id: int = 0
     observado_em: str = ''  # Preço pode ter sido coletado antes da consulta à API.
+    validade_ate: str = ''
+    origem_url: str = ''
+    canal: str = ''
+    pedido_minimo: float = 0.0
 
 
 class FonteIndisponivel(Exception):
@@ -247,11 +255,16 @@ def _medidas(texto):
     rx = r'(?<!\w)(\d+(?:[,.]\d+)?)\s*(quilogramas?|kg|gramas?|gr|g|mililitros?|ml|litros?|l|unidades?|un|ovos|rolos?)\b'
     for valor, unidade in re.findall(rx, t):
         quantidade = float(valor.replace(',', '.'))
-        if unidade in ('kg', 'quilograma', 'quilogramas'): quantidade, unidade = quantidade*1000, 'g'
-        elif unidade in ('l', 'litro', 'litros'): quantidade, unidade = quantidade*1000, 'ml'
-        elif unidade in ('grama', 'gramas', 'gr'): unidade = 'g'
-        elif unidade in ('mililitro', 'mililitros'): unidade = 'ml'
-        else: unidade = 'un'
+        if unidade in ('kg', 'quilograma', 'quilogramas'):
+            quantidade, unidade = quantidade * 1000, 'g'
+        elif unidade in ('l', 'litro', 'litros'):
+            quantidade, unidade = quantidade * 1000, 'ml'
+        elif unidade in ('g', 'gr', 'grama', 'gramas'):
+            unidade = 'g'
+        elif unidade in ('ml', 'mililitro', 'mililitros'):
+            unidade = 'ml'
+        else:
+            unidade = 'un'
         medidas.append((quantidade, unidade))
     if 'duzia' in t or 'dúzia' in t: medidas.append((12.0, 'un'))
     return medidas
@@ -287,7 +300,12 @@ def _equivalente(alvo: dict, anuncio: str, ean: str = '') -> float:
     if re.search(r'\b\d+\s*[x×]\s*\d+\s*(?:kg|g|ml|l|un)\b', titulo): return 0
     esperado = _medidas(alvo['nome'])
     encontrado = _medidas(titulo)
-    if esperado and not any(abs(a-b) < .01 and ua == ub for a,ua in esperado for b,ub in encontrado): return 0
+    if esperado and not any(
+        unidade_pedida == unidade_anunciada and abs(pedido - anunciado) < 0.01
+        for pedido, unidade_pedida in esperado
+        for anunciado, unidade_anunciada in encontrado
+    ):
+        return 0
     categoria = next((t for t in re.findall(r'[a-z]+', consulta) if t not in {'de','da','do','em','tipo'}), '')
     if categoria not in titulo.split(): return 0
     for veto in _VETOS.get(categoria, ()):
@@ -338,6 +356,9 @@ def _conexao():
         motivo TEXT NOT NULL, PRIMARY KEY(loja,identidade))''')
     con.execute('''CREATE TABLE IF NOT EXISTS respostas_precomelhor (
         chave TEXT NOT NULL PRIMARY KEY, gravado TEXT NOT NULL, conteudo TEXT NOT NULL)''')
+    con.execute('''CREATE TABLE IF NOT EXISTS cotacao_catalogo_oficial (
+        fonte TEXT NOT NULL, identidade TEXT NOT NULL, consultado TEXT NOT NULL,
+        conteudo TEXT NOT NULL, PRIMARY KEY (fonte, identidade))''')
     return con
 
 
@@ -348,14 +369,38 @@ def _segundos_passados(ts):
     except (ValueError,TypeError): return float('inf')
 
 
+def _dentro_do_prazo(ts, segundos):
+    return 0 <= _segundos_passados(ts) < segundos
+
+
+def cotacao_vigente(cotacao):
+    """Revalida uma cotação guardada na sessão do Streamlit."""
+    if cotacao.get('tipo') == 'historico_local_adm':
+        return True
+    if not _dentro_do_prazo(cotacao.get('consultado_em'), TTL_HORAS * 3600):
+        return False
+    validade = cotacao.get('validade_ate')
+    if not validade:
+        return True
+    try:
+        if 'T' in validade:
+            fim = datetime.fromisoformat(validade)
+            return fim.tzinfo is not None and datetime.now(timezone.utc) < fim
+        return date.fromisoformat(validade) >= datetime.now(FUSO_PIRACICABA).date()
+    except (ValueError, TypeError):
+        return False
+
+
 def _cache_pegar(mercado, alvo):
     with LOCK, _conexao() as con:
         row = con.execute('SELECT gravado, conteudo FROM cotacao_precomelhor WHERE loja=? AND identidade=?',
                           (MERCADOS[mercado]['store_id'],_identidade(alvo))).fetchone()
-    if not row or _segundos_passados(row[0]) > TTL_HORAS*3600: return None
+    if not row or not _dentro_do_prazo(row[0], TTL_HORAS * 3600): return None
     try:
         reg = Cotacao(**json.loads(row[1]))
-        if (reg.loja_id != MERCADOS[mercado]['store_id'] or
+        if (reg.mercado != mercado or reg.produto != alvo['nome'] or
+            not _dentro_do_prazo(reg.consultado_em, TTL_HORAS * 3600) or
+            reg.loja_id != MERCADOS[mercado]['store_id'] or
             (reg.ean and not _ean_valido(reg.ean)) or
             _equivalente(alvo,reg.anuncio,reg.ean) < 65): return None
         return reg
@@ -368,7 +413,7 @@ def _cache_guardar(reg, alvo):
         raise ValueError('Cotação não corresponde ao produto/filial')
     with LOCK, _conexao() as con:
         con.execute('INSERT OR REPLACE INTO cotacao_precomelhor VALUES(?,?,?,?)',
-                    (reg.loja_id,_identidade(alvo),_agora(),json.dumps(asdict(reg),ensure_ascii=False)))
+                    (reg.loja_id,_identidade(alvo),reg.consultado_em,json.dumps(asdict(reg),ensure_ascii=False)))
         con.execute('DELETE FROM ausencia_precomelhor WHERE loja=? AND identidade=?',
                     (reg.loja_id,_identidade(alvo)))
 
@@ -377,13 +422,15 @@ def _ausencia_pegar(mercado, alvo):
     with LOCK, _conexao() as con:
         row = con.execute('SELECT gravado,motivo FROM ausencia_precomelhor WHERE loja=? AND identidade=?',
                           (MERCADOS[mercado]['store_id'],_identidade(alvo))).fetchone()
-    return row[1] if row and _segundos_passados(row[0]) < 2*3600 else None
+    return row[1] if row and _dentro_do_prazo(row[0], 2 * 3600) else None
 
 
 def _ausencia_guardar(mercado,alvo,motivo):
     with LOCK, _conexao() as con:
+        chave = MERCADOS[mercado]['store_id'], _identidade(alvo)
         con.execute('INSERT OR REPLACE INTO ausencia_precomelhor VALUES(?,?,?,?)',
-                    (MERCADOS[mercado]['store_id'],_identidade(alvo),_agora(),str(motivo)[:400]))
+                    (*chave,_agora(),str(motivo)[:400]))
+        con.execute('DELETE FROM cotacao_precomelhor WHERE loja=? AND identidade=?', chave)
 
 
 def _chave():
@@ -454,7 +501,7 @@ def _solicitar(url, params=None):
 
 
 
-def _solicitar_cache(url, params=None, orcamento=None):
+def _solicitar_cache(url, params=None, orcamento=None, *, atualizar=False):
     """Cache de resposta API inteira, compartilhado por todas as filiais.
 
     Apenas respostas HTTP bem-sucedidas entram no cache; preços SEM ID
@@ -463,33 +510,38 @@ def _solicitar_cache(url, params=None, orcamento=None):
     params = params or {}
     assinatura = hashlib.sha256(json.dumps([url, sorted(params.items())],
                                          ensure_ascii=False).encode()).hexdigest()
-    with LOCK, _conexao() as con:
-        linha = con.execute('SELECT gravado,conteudo FROM respostas_precomelhor WHERE chave=?',
-                            (assinatura,)).fetchone()
-    if linha:
+    respostas_desta_busca = orcamento.setdefault('respostas', {}) if orcamento is not None else {}
+    if assinatura in respostas_desta_busca:
+        return respostas_desta_busca[assinatura]
+    with LOCK_REQUISICAO:
+        if not atualizar:
+            with LOCK, _conexao() as con:
+                linha = con.execute('SELECT gravado,conteudo FROM respostas_precomelhor WHERE chave=?',
+                                    (assinatura,)).fetchone()
+            if linha:
+                try:
+                    conteudo = json.loads(linha[1])
+                    tempo = TTL_HORAS * 3600 if conteudo else 2 * 3600
+                    if _dentro_do_prazo(linha[0], tempo):
+                        return conteudo, linha[0]
+                except (ValueError, TypeError):
+                    pass
+        if orcamento is not None:
+            if orcamento['usadas'] >= orcamento['max']:
+                raise FonteIndisponivel(
+                    f'Orçamento de {orcamento["max"]} consultas por pesquisa atingido. '
+                    'Para economizar a cota grátis, selecione menos itens ou use os preços salvos.')
+            orcamento['usadas'] += 1
+        resposta = _solicitar(url, params)
+        consultado_em = _agora()
         try:
-            conteudo = json.loads(linha[1])
-            tempo = 2 * 3600 if not conteudo else TTL_HORAS * 3600
-            if _segundos_passados(linha[0]) <= tempo:
-                return conteudo
-        except (ValueError, TypeError):
+            with LOCK, _conexao() as con:
+                con.execute('INSERT OR REPLACE INTO respostas_precomelhor VALUES(?,?,?)',
+                            (assinatura, consultado_em, json.dumps(resposta, ensure_ascii=False)))
+        except (ValueError, TypeError, sqlite3.Error):
             pass
-    if orcamento is not None:
-        if orcamento['usadas'] >= orcamento['max']:
-            raise FonteIndisponivel(
-                f'Orçamento de {orcamento["max"]} consultas por pesquisa atingido. '
-                'Para economizar a cota grátis, selecione menos itens ou use os preços salvos.')
-        orcamento['usadas'] += 1
-    resposta = _solicitar(url, params)
-    # No JSON de retorno não existem credenciais, só dados públicos do produto.
-    try:
-        serializado = json.dumps(resposta, ensure_ascii=False)
-        with LOCK, _conexao() as con:
-            con.execute('INSERT OR REPLACE INTO respostas_precomelhor VALUES(?,?,?)',
-                        (assinatura, _agora(), serializado))
-    except (ValueError, TypeError, sqlite3.Error):
-        pass
-    return resposta
+        respostas_desta_busca[assinatura] = resposta, consultado_em
+        return resposta, consultado_em
 
 def _primeiro(dicionario,*chaves):
     if not isinstance(dicionario,dict): return None
@@ -617,7 +669,7 @@ def extrair_cotacoes_api(resposta, mercado, alvo, consultado_em=None):
             ofertas=_ofertas_produto(produto,loja_id,catalogo_da_filial=True)
         if not ofertas: continue
         valor,observado=min(ofertas,key=lambda v:v[0])
-        if not ean.isdigit() or len(ean) not in (8,12,13,14):
+        if not _ean_valido(ean):
             ean=''
         # EAN e ID de loja usados somente para criar links de referência do provedor.
         link = f'https://www.precomelhor.com.br/p/{ean}' if ean else cfg['url']
@@ -667,14 +719,18 @@ def motivo_sem_oferta(resposta, mercado, alvo):
 def _ollama_ativo(): return os.getenv('BUSCAI_OLLAMA','1').strip().lower() not in ('0','false','nao','não')
 
 
-@lru_cache(maxsize=1)
 def status_ollama():
     if not _ollama_ativo(): return 'desativado'
+    modelo = os.getenv('BUSCAI_OLLAMA_MODELO','qwen2.5:0.5b')
+    return _status_ollama(modelo, int(time.monotonic() // 30))
+
+
+@lru_cache(maxsize=4)
+def _status_ollama(modelo, intervalo):
     try:
         r = requests.get('http://127.0.0.1:11434/api/tags',timeout=2)
         if not r.ok: return 'inacessível'
         nomes=[m.get('name','') for m in r.json().get('models',[]) if isinstance(m,dict)]
-        modelo=os.getenv('BUSCAI_OLLAMA_MODELO','qwen2.5:0.5b')
         if not any(n==modelo or n.startswith(modelo+':') for n in nomes): return 'modelo não instalado'
         return 'pronto'
     except (requests.RequestException,ValueError): return 'inacessível'
@@ -755,7 +811,7 @@ def _ean_valido(valor):
     return ((10 - soma % 10) % 10) == digitos[-1]
 
 
-def _cotacoes_por_ean(resposta, nome_alvo, alvo, mercados):
+def _cotacoes_por_ean(resposta, nome_alvo, alvo, mercados, consultado_em=None):
     """Cotações por EAN: loja exata; descoberta segura de filiais de Piracicaba.
 
     Filial não é inferida por cidade São Paulo nem por rede isolada.
@@ -826,12 +882,12 @@ def _cotacoes_por_ean(resposta, nome_alvo, alvo, mercados):
         cotacoes.append(Cotacao(
             mercado, nome_alvo, nome, valor,
             f'https://www.precomelhor.com.br/p/{ean}' if _ean_valido(ean) else cfg['url'],
-            _agora(), confianca=_equivalente(alvo, nome, ean), ean=ean,
+            consultado_em or _agora(), confianca=_equivalente(alvo, nome, ean), ean=ean,
             loja_id=loja_id, observado_em=observado))
     return cotacoes
 
 
-def _consulta_global_produto(alvo, mercados, erros=None, orcamento=None):
+def _consulta_global_produto(alvo, mercados, erros=None, orcamento=None, *, atualizar=False):
     """Busca EAN conhecido e descobre alternativas com preferência por cobertura.
 
     Respostas por EAN e buscas são guardadas por 24 horas; uma busca serve as
@@ -860,8 +916,9 @@ def _consulta_global_produto(alvo, mercados, erros=None, orcamento=None):
                 continue
             usados.add(ean)
             try:
-                resposta = _solicitar_cache(API_URL, {'ean': ean, 'include': 'product,prices'}, orcamento)
-                encontrados = _cotacoes_por_ean(resposta, alvo['nome'], alvo, mercados)
+                resposta, consultado_em = _solicitar_cache(
+                    API_URL, {'ean': ean, 'include': 'product,prices'}, orcamento, atualizar=atualizar)
+                encontrados = _cotacoes_por_ean(resposta, alvo['nome'], alvo, mercados, consultado_em)
                 resultados.extend(encontrados)
                 faltantes.difference_update(x.mercado for x in encontrados)
             except FonteIndisponivel as exc:
@@ -891,7 +948,8 @@ def _consulta_global_produto(alvo, mercados, erros=None, orcamento=None):
             if i and candidatos_q:
                 break
             try:
-                resposta = _solicitar_cache(API_URL, {'q': busca, 'page': 1}, orcamento)
+                resposta, _ = _solicitar_cache(
+                    API_URL, {'q': busca, 'page': 1}, orcamento, atualizar=atualizar)
                 for item in _lista_de_produtos(resposta):
                     if not isinstance(item, dict):
                         continue
@@ -916,83 +974,232 @@ def _consulta_global_produto(alvo, mercados, erros=None, orcamento=None):
     return resultados
 
 
+def _consultar_produto_api(alvo, mercados, atualizar, orcamento):
+    """Usa a API somente para as filiais que têm um ID confirmado."""
+    cotacoes = {}
+    avisos = {}
+    faltantes = []
+    salvos = {}
+    for mercado in mercados:
+        salvo = _cache_pegar(mercado, alvo)
+        if salvo:
+            salvos[mercado] = salvo
+        if salvo and not atualizar:
+            cotacoes[mercado] = salvo
+            continue
+        if not MERCADOS[mercado].get('id_verificado') or MERCADOS[mercado].get('manual_only'):
+            continue
+        ausencia = None if atualizar else _ausencia_pegar(mercado, alvo)
+        if ausencia:
+            avisos[mercado] = ausencia
+        else:
+            faltantes.append(mercado)
+
+    erros = []
+    rejeitados = set()
+    if faltantes:
+        achados = _consulta_global_produto(
+            alvo, faltantes, erros=erros, orcamento=orcamento, atualizar=atualizar,
+        )
+        # O primeiro candidato aceito de cada filial é o menor preço elegível.
+        for reg in sorted(achados, key=lambda reg: reg.valor):
+            if reg.mercado not in faltantes or reg.mercado in cotacoes:
+                continue
+            decisao = _ollama_confirma(alvo.get('busca') or alvo['nome'], reg.anuncio)
+            if decisao is False:
+                rejeitados.add(reg.mercado)
+                continue
+            metodo = 'ollama_e_regras' if decisao is True else 'regras_locais_ollama_indisponivel'
+            valido = Cotacao(**{**asdict(reg), 'verificacao': metodo})
+            _cache_guardar(valido, alvo)
+            cotacoes[reg.mercado] = valido
+
+    for mercado in faltantes:
+        if mercado in cotacoes:
+            continue
+        if os.getenv('BUSCAI_CONSULTAR_FILIAIS', '0') == '1':
+            reg, problema = _buscar_mercado(mercado, alvo, atualizar=atualizar)
+            if reg:
+                cotacoes[mercado] = reg
+                continue
+            avisos[mercado] = problema
+        if erros:
+            if mercado in salvos:
+                cotacoes[mercado] = salvos[mercado]
+                continue
+            avisos.setdefault(mercado, erros[0])
+        elif mercado not in avisos:
+            motivo = ('Ollama rejeitou os anúncios encontrados.' if mercado in rejeitados else
+                      'Sem preço verificável desta filial nos EANs consultados.')
+            avisos[mercado] = motivo
+            _ausencia_guardar(mercado, alvo, motivo)
+    return cotacoes, avisos
+
+
+def _cotacao_encarte(mercado, alvo, encarte):
+    if encarte is None or not _dentro_do_prazo(encarte.consultado_em, TTL_HORAS * 3600):
+        return None
+    hoje = datetime.now(FUSO_PIRACICABA).date().isoformat()
+    compativeis = [
+        (oferta, _equivalente(alvo, oferta.anuncio))
+        for oferta in encarte.ofertas if oferta.validade_ate >= hoje
+    ]
+    compativeis = [(oferta, pontos) for oferta, pontos in compativeis if pontos >= 65]
+    if not compativeis:
+        return None
+    oferta, pontos = min(compativeis, key=lambda item: item[0].valor)
+    return Cotacao(
+        mercado, alvo['nome'], oferta.anuncio, oferta.valor, oferta.imagem_url,
+        encarte.consultado_em, tipo='encarte_oficial',
+        confianca=pontos, verificacao='ollama_ocr_e_regras',
+        loja_id=MERCADOS[mercado]['store_id'], validade_ate=oferta.validade_ate,
+        origem_url=oferta.fonte_url, canal='loja fisica',
+    )
+
+
+def precomelhor_ativo():
+    return os.getenv('BUSCAI_USAR_PRECOMELHOR', '0').strip() == '1'
+
+
+def _consultar_savegnago(alvo, *, atualizar, somente_salvos):
+    from fontes_busca_web import BuscaWebIndisponivel, encontrar_produtos_savegnago
+    from fontes_savegnago import (
+        SAVEGNAGO_CEP, SAVEGNAGO_MERCADO, SAVEGNAGO_SELLER,
+        ErroFonteSavegnago, buscar_oferta_savegnago,
+    )
+
+    fonte = f'savegnago:retirada:{SAVEGNAGO_SELLER}:{SAVEGNAGO_CEP}'
+    chave = fonte, _identidade(alvo)
+    with LOCK, _conexao() as con:
+        linha = con.execute(
+            'SELECT consultado, conteudo FROM cotacao_catalogo_oficial WHERE fonte=? AND identidade=?',
+            chave,
+        ).fetchone()
+    salvo = None
+    ausencia_recente = False
+    if linha:
+        try:
+            dados = json.loads(linha[1])
+            if dados is None:
+                ausencia_recente = _dentro_do_prazo(linha[0], min(TTL_HORAS, 2) * 3600)
+            elif _dentro_do_prazo(linha[0], TTL_HORAS * 3600) and cotacao_vigente(dados):
+                salvo = Cotacao(**dados)
+        except (ValueError, TypeError, AttributeError):
+            pass
+
+    sem_oferta = 'O catálogo do Savegnago não confirmou oferta para retirada nesta filial.'
+    if somente_salvos or (not atualizar and (salvo is not None or ausencia_recente)):
+        return salvo, sem_oferta if ausencia_recente else ''
+
+    oferta = None
+    erro = ''
+    try:
+        oferta = buscar_oferta_savegnago(alvo, _equivalente)
+    except ErroFonteSavegnago as exc:
+        erro = str(exc)
+    if oferta is None:
+        try:
+            urls = encontrar_produtos_savegnago(alvo.get('busca') or alvo['nome'])
+            if urls:
+                oferta = buscar_oferta_savegnago(alvo, _equivalente, urls=urls)
+        except (BuscaWebIndisponivel, ErroFonteSavegnago) as exc:
+            erro = str(exc)
+
+    if oferta is None and erro:
+        # Preserva apenas a última oferta enquanto estiver dentro do seu TTL original.
+        return salvo, erro
+    reg = None
+    if oferta is not None:
+        reg = Cotacao(
+            SAVEGNAGO_MERCADO, alvo['nome'], oferta.anuncio, oferta.valor,
+            oferta.url, oferta.consultado_em, tipo='catalogo_savegnago',
+            confianca=oferta.confianca, ean=oferta.ean, verificacao='simulacao_oficial_vtex',
+            loja_id=MERCADOS[SAVEGNAGO_MERCADO]['store_id'],
+            observado_em=datetime.fromisoformat(oferta.consultado_em).astimezone(FUSO_PIRACICABA).date().isoformat(),
+            origem_url='https://www.savegnago.com.br/piracicaba',
+            validade_ate=oferta.validade_preco, canal='retirada online',
+            pedido_minimo=oferta.pedido_minimo,
+        )
+    with LOCK, _conexao() as con:
+        con.execute(
+            'INSERT OR REPLACE INTO cotacao_catalogo_oficial VALUES (?,?,?,?)',
+            (*chave, reg.consultado_em if reg else _agora(),
+             json.dumps(asdict(reg) if reg else None, ensure_ascii=False)),
+        )
+    return reg, '' if reg else sem_oferta
+
+
 def consultar(quantidades: dict[str, int], mercados: list[str] | None = None,
               atualizar=False, progresso=None, somente_salvos=False):
-    """Preço por EAN prioritariamente; rota de filial apenas se habilitada.
+    """Entrega cotações verificadas, com histórico manual como alternativa."""
+    from fontes_savegnago import SAVEGNAGO_MERCADO
+    from precos_encartes import consultar_encarte, tem_encarte
+    from precos_manuais import obter_preco
 
-    Consultas antigas sem resultado no cache de duas horas não impedem a nova
-    estratégia. ``atualizar`` ignora preços positivos guardados.
-    ``somente_salvos`` não realiza nenhuma chamada à API nem ao Ollama.
-    Os registros manuais são usados como fallback para lojas sem cotação da API.
-    """
     catalogo = {p['nome']: p for p in carregar_catalogo()}
+    produtos = [catalogo[p] for p in quantidades if p in catalogo]
     escolhidos = [m for m in (list(MERCADOS) if mercados is None else mercados) if m in MERCADOS]
-    pares = [(m, p) for m in escolhidos for p in quantidades if p in catalogo]
     resultado = {m: {} for m in escolhidos}
     avisos = {}
-    total = len(pares)
-    n = 0
     orcamento = {'usadas': 0, 'max': max(1, min(70, int(os.getenv('BUSCAI_MAX_CHAMADAS_PESQUISA', '10'))))}
-    for p in quantidades:
-        if p not in catalogo:
-            continue
-        alvo = catalogo[p]
-        faltantes = []
-        for m in escolhidos:
-            salvo = None if atualizar else _cache_pegar(m, alvo)
-            if salvo:
-                resultado[m][p] = asdict(salvo)
+    usar_precomelhor = precomelhor_ativo()
+    encartes_consultados = {}
+    for n, alvo in enumerate(produtos, start=1):
+        produto = alvo['nome']
+        cotacoes = {}
+        erros = {}
+        # Sessões Streamlit simultâneas compartilham o mesmo trabalho por produto.
+        lock = LOCKS_PRODUTO[int(_identidade(alvo), 16) % len(LOCKS_PRODUTO)]
+        with lock:
+            for mercado in escolhidos:
+                ofertas = []
+                if mercado == SAVEGNAGO_MERCADO:
+                    reg, erro = _consultar_savegnago(
+                        alvo, atualizar=atualizar, somente_salvos=somente_salvos,
+                    )
+                    if reg is not None:
+                        ofertas.append(reg)
+                    erros[mercado] = erro
+                if tem_encarte(mercado):
+                    if mercado not in encartes_consultados:
+                        encartes_consultados[mercado] = consultar_encarte(
+                            DB_ARQUIVO, mercado, TTL_HORAS,
+                            atualizar=atualizar, somente_salvos=somente_salvos,
+                        )
+                    encarte, erro = encartes_consultados[mercado]
+                    reg = _cotacao_encarte(mercado, alvo, encarte)
+                    if reg is not None:
+                        ofertas.append(reg)
+                    erros[mercado] = erro or erros.get(mercado) or (
+                        'Nenhuma oferta compatível confirmada no encarte vigente.' if encarte else ''
+                    )
+                if ofertas:
+                    cotacoes[mercado] = min(ofertas, key=lambda reg: reg.valor)
+
+            faltantes = [mercado for mercado in escolhidos if mercado not in cotacoes]
+            if usar_precomelhor and not somente_salvos and faltantes:
+                alternativas, erros_api = _consultar_produto_api(alvo, faltantes, atualizar, orcamento)
+                cotacoes.update(alternativas)
+                erros.update(erros_api)
             else:
-                faltantes.append(m)
-        erros = []
-        # Redes sem API validada ficam somente no cadastro manual: não gastam cota.
-        mercados_api = [m for m in faltantes
-                        if MERCADOS[m].get('id_verificado') and not MERCADOS[m].get('manual_only')]
-        if mercados_api and not somente_salvos:
-            achados = _consulta_global_produto(alvo, mercados_api, erros=erros, orcamento=orcamento)
-            for reg in achados:
-                if reg.mercado not in faltantes:
-                    continue
-                decisao = _ollama_confirma(alvo.get('busca') or p, reg.anuncio)
-                if decisao is False:
-                    avisos[f'{reg.mercado} · {p}'] = 'Ollama rejeitou este anúncio.'
-                    continue
-                metodo = 'ollama_e_regras' if decisao is True else 'regras_locais_ollama_indisponivel'
-                valido = Cotacao(**{**asdict(reg), 'verificacao': metodo})
-                anterior = resultado[valido.mercado].get(p)
-                if anterior is None or valido.valor < anterior['valor']:
-                    resultado[valido.mercado][p] = asdict(valido)
-                    _cache_guardar(valido, alvo)
-        faltantes = [m for m in escolhidos if p not in resultado[m]]
-        # A rota de catálogo pode dar metadados inesperados para este provedor;
-        # fica desligada até ser validada com resposta real da filial.
-        if not somente_salvos and os.getenv('BUSCAI_CONSULTAR_FILIAIS', '0') == '1':
-            for m in faltantes:
-                if MERCADOS[m].get('manual_only') or not MERCADOS[m].get('id_verificado'):
-                    continue
-                reg, erro = _buscar_mercado(m, alvo, atualizar=atualizar)
-                if reg:
-                    resultado[m][p] = asdict(reg)
-                elif erro:
-                    avisos[f'{m} · {p}'] = erro
-        # Fallback persistente: cotação REAL informada pelo administrador.
-        # Não substitui preço obtido da API e nunca inventa valores.
-        from precos_manuais import obter_preco
-        for m in escolhidos:
-            if p not in resultado[m]:
-                manual = obter_preco(m, p)
-                if manual is not None:
-                    resultado[m][p] = manual
-                    avisos.pop(f'{m} · {p}', None)
-        for m in escolhidos:
-            if p not in resultado[m] and f'{m} · {p}' not in avisos:
-                aviso = next((x for x in erros if any(
-                    termo in x for termo in ('Limite local', 'Orçamento', '429', '401', '403', 'Falha de rede'))), None)
-                avisos[f'{m} · {p}'] = aviso or ('Sem preço desta filial nos EANs consultados; '
-                                                  'não significa que o produto não exista na loja.')
-            n += 1
-            if progresso:
-                progresso(n, total)
+                for mercado in faltantes:
+                    salvo = _cache_pegar(mercado, alvo)
+                    if salvo and (usar_precomelhor or salvo.tipo == 'informado_manual_com_fonte'):
+                        cotacoes[mercado] = salvo
+
+        for mercado in escolhidos:
+            reg = cotacoes.get(mercado)
+            motivo = erros.get(mercado, '')
+            if reg is not None:
+                resultado[mercado][produto] = asdict(reg)
+                continue
+            manual = obter_preco(mercado, produto)
+            if manual is not None:
+                resultado[mercado][produto] = manual
+            else:
+                avisos[f'{mercado} · {produto}'] = motivo or 'Sem preço verificável para esta filial.'
+        if progresso and escolhidos:
+            progresso(n, len(produtos))
     return resultado, avisos
 
 

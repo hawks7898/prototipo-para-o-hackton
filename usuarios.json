@@ -18,6 +18,50 @@
     },
     "historico": [
       {
+        "data": "22/11/2026 18:14",
+        "tipo": "Pesquisa",
+        "itens": {
+          "Feijão carioca 1 kg": 1
+        },
+        "melhor": "Assaí Atacadista",
+        "modalidade": "Retirar",
+        "custo": 13.509975494818564,
+        "origem_preco": "Coleta manual"
+      },
+      {
+        "data": "22/11/2026 18:12",
+        "tipo": "Pesquisa",
+        "itens": {
+          "Óleo de soja 900 ml": 1
+        },
+        "melhor": "Assaí Atacadista",
+        "modalidade": "Retirar",
+        "custo": 12.309975494818564,
+        "origem_preco": "Coleta manual"
+      },
+      {
+        "data": "22/11/2026 18:11",
+        "tipo": "Pesquisa",
+        "itens": {
+          "Arroz 5 kg": 1
+        },
+        "melhor": "Supermercado Beira Rio",
+        "modalidade": "Retirar",
+        "custo": 33.91110986229835,
+        "origem_preco": "Coleta manual"
+      },
+      {
+        "data": "22/11/2026 13:20",
+        "tipo": "Pesquisa",
+        "itens": {
+          "Arroz 5 kg": 1
+        },
+        "melhor": "Savegnago Supermercados",
+        "modalidade": "Retirar",
+        "custo": 30.080775533968776,
+        "origem_preco": "Coleta manual"
+      },
+      {
         "data": "22/11/2026 10:23",
         "tipo": "Pesquisa",
         "itens": {
@@ -252,7 +296,78 @@
     "hash": "1b1920b248e2de86a7c2759e31366493e4dd19da5f3177cb61369c46b2d0be23",
     "veiculo": "eletrico",
     "criado_em": "2026-11-21 08:57:14",
-    "historico": [],
+    "historico": [
+      {
+        "data": "22/11/2026 18:08",
+        "tipo": "Pesquisa",
+        "itens": {
+          "Arroz 5 kg": 1,
+          "Feijão carioca 1 kg": 1,
+          "Ovos 20 unidades": 1
+        },
+        "melhor": "Arena Atacado",
+        "modalidade": "Retirar",
+        "custo": 51.56384250571048,
+        "origem_preco": "Coleta manual"
+      },
+      {
+        "data": "22/11/2026 18:02",
+        "tipo": "Pesquisa",
+        "itens": {
+          "Arroz 5 kg": 1,
+          "Feijão carioca 1 kg": 1,
+          "Ovos 20 unidades": 1
+        },
+        "melhor": "Arena Atacado",
+        "modalidade": "Retirar",
+        "custo": 51.56384250571048,
+        "origem_preco": "Coleta manual"
+      },
+      {
+        "data": "22/11/2026 18:00",
+        "tipo": "Pesquisa",
+        "itens": {
+          "Arroz 5 kg": 1
+        },
+        "melhor": "Arena Atacado",
+        "modalidade": "Retirar",
+        "custo": 29.273842505710476,
+        "origem_preco": "Coleta manual"
+      },
+      {
+        "data": "22/11/2026 18:00",
+        "tipo": "Pesquisa",
+        "itens": {
+          "Arroz 5 kg": 1
+        },
+        "melhor": "Arena Atacado",
+        "modalidade": "Retirar",
+        "custo": 29.273842505710476,
+        "origem_preco": "Coleta manual"
+      },
+      {
+        "data": "22/11/2026 18:00",
+        "tipo": "Pesquisa",
+        "itens": {
+          "Arroz 5 kg": 1
+        },
+        "melhor": "Arena Atacado",
+        "modalidade": "Retirar",
+        "custo": 29.273842505710476,
+        "origem_preco": "Coleta manual"
+      },
+      {
+        "data": "22/11/2026 18:00",
+        "tipo": "Pesquisa",
+        "itens": {
+          "Arroz 5 kg": 1
+        },
+        "melhor": "Arena Atacado",
+        "modalidade": "Retirar",
+        "custo": 29.273842505710476,
+        "origem_preco": "Coleta manual"
+      }
+    ],
     "produtos": {
       "marmita de ovo": {
         "rendimento": 6,

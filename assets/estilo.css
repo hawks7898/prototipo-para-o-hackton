@@ -1,0 +1,669 @@
+
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap');
+:root{--verm:#f03a47;--verm2:#ff6b75;--txt:#ececec;--titulo:#cfd4dc;--suave:#b9b0b0;--linha:rgba(236,236,236,.82);--celula:#232121;--cinza:#7b7f83}
+.stApp,.stApp p,.stApp label,.stApp button,.stApp input,.stApp textarea,.stApp li,.stApp td,.stApp th,
+.stApp h1,.stApp h2,.stApp h3,.stApp h4,.stApp [data-baseweb="select"] div,.stApp [data-baseweb="tab"]{
+  font-family:'Space Grotesk',system-ui,-apple-system,'Segoe UI',sans-serif}
+.stApp{color:var(--txt)}
+[data-testid="stHeader"]{background:transparent}
+[data-testid="stDecoration"],.stDeployButton,[data-testid="stAppDeployButton"],footer{display:none!important}
+.block-container{max-width:1120px;padding-top:1rem;padding-bottom:4rem}
+
+/* títulos e rótulos */
+.stApp h1,.stApp h2,.stApp h3,.stApp h4{text-transform:uppercase;font-weight:500;letter-spacing:.01em}
+.stApp h4{font-size:1rem;color:var(--suave);margin-top:1.2rem}
+.stApp [data-testid="stWidgetLabel"] p{text-transform:uppercase;letter-spacing:.04em;font-size:.76rem;color:var(--txt)}
+.titulo-pagina{font-size:clamp(1.4rem,3.3vw,2.3rem);font-weight:400;text-transform:uppercase;color:var(--titulo);
+  padding-bottom:.6rem;border-bottom:1px solid var(--verm);margin:1.6rem 0 1.4rem}
+.rotulo{font-size:.92rem;color:var(--txt)}
+
+/* logo */
+.logo-img{height:34px;display:block}
+.logo-pill{display:inline-block;background:#cfd4dc;color:#1d1d1f;border-radius:999px;padding:.28rem 1.5rem;font-weight:600}
+
+/* botões */
+.stApp button[kind="secondary"],.stApp [data-testid="stBaseButton-secondary"]{background:transparent;
+  border:1px solid var(--linha);color:var(--txt);border-radius:999px;padding:.3rem 1.15rem}
+.stApp button[kind="primary"],.stApp [data-testid="stBaseButton-primary"]{background:transparent;
+  border:1px solid var(--verm);color:var(--verm);border-radius:999px;padding:.3rem 1.15rem}
+.stApp button[kind="primary"]:hover,.stApp [data-testid="stBaseButton-primary"]:hover{
+  background:rgba(240,58,71,.12);border-color:var(--verm2);color:var(--verm2)}
+.stApp button[kind="secondary"]:hover,.stApp [data-testid="stBaseButton-secondary"]:hover{
+  background:rgba(255,255,255,.07);border-color:#fff;color:#fff}
+.stApp button p{text-transform:uppercase;letter-spacing:.03em;font-size:.82rem}
+.stApp button:disabled{opacity:.4}
+.st-key-area_pesquisar [data-testid="stElementContainer"],.st-key-area_pesquisar [data-testid="stButton"],
+.st-key-area_pesquisar button{width:100%!important}
+.st-key-area_pesquisar button{padding:.5rem 1rem;border-color:var(--verm)}
+.st-key-expandir{align-items:center;margin-top:-1.5rem;position:relative;z-index:3}
+.st-key-expandir button{background:var(--verm)!important;border-color:var(--verm)!important;color:#fff!important;
+  padding:.2rem 2.4rem!important}
+.st-key-expandir button p{color:#fff}
+.st-key-link_a button,.st-key-link_b button{border:none!important;background:none!important;padding:.1rem 0!important;
+  text-decoration:underline;color:var(--txt)!important;justify-content:flex-start}
+.st-key-link_a button p,.st-key-link_b button p{font-size:.75rem}
+.st-key-alt_qtd [data-testid="stPopover"] button,.st-key-alt_qtd button{border:none!important;background:none!important;
+  padding:.1rem 0!important;text-decoration:underline;color:var(--suave)!important}
+.st-key-alt_qtd button p{font-size:.74rem}
+
+/* barra superior e navegação em pílulas */
+.st-key-topbar{border-bottom:1px solid rgba(255,255,255,.7);padding-bottom:.8rem;margin-bottom:.4rem}
+.st-key-topbar [data-testid="stPopover"] button{border:none!important;background:transparent!important;padding:0 .3rem!important}
+.st-key-topbar [data-testid="stPopover"] button p{font-size:1.7rem;color:var(--txt)}
+.st-key-btn_ajuda button,.st-key-btn_ajuda_on button{border:none!important;background:none!important;padding:0 .4rem!important;
+  color:var(--txt)!important}
+.st-key-btn_ajuda button p,.st-key-btn_ajuda_on button p{font-size:1.7rem!important;font-weight:800}
+.st-key-btn_ajuda_on button,.st-key-btn_ajuda_on button p{color:var(--verm)!important}
+.st-key-nav [role="radiogroup"]{gap:.7rem;flex-wrap:wrap}
+.st-key-nav [role="radiogroup"] label{border:1px solid var(--linha);border-radius:999px;padding:.2rem 1.1rem;margin:0;
+  background:transparent;cursor:pointer;min-width:8.4rem;justify-content:center}
+.st-key-nav [role="radiogroup"] label>div:first-child{display:none}
+.st-key-nav [role="radiogroup"] label p{text-transform:uppercase;font-size:.8rem;letter-spacing:.03em}
+.st-key-nav [role="radiogroup"] label:has(input:checked){border-color:var(--verm)}
+.st-key-nav [role="radiogroup"] label:has(input:checked) p{color:var(--verm)}
+[data-testid="stPopoverBody"]{min-width:min(460px,92vw);background:#1d1616;border:1px solid rgba(255,255,255,.18);border-radius:18px}
+
+/* campos (telas internas: cinza preenchido) */
+.stApp [data-baseweb="input"],.stApp [data-baseweb="base-input"]{border-radius:999px!important;background:var(--cinza)!important;border:none!important}
+.stApp [data-baseweb="input"] input{color:#15171a!important;padding-left:1.1rem}
+.stApp input::placeholder{text-transform:uppercase;letter-spacing:.03em;color:#3b3f43!important;opacity:1;font-size:.84rem}
+.stApp [data-baseweb="select"]>div{background:var(--cinza)!important;border:none!important;border-radius:999px!important}
+.stApp [data-baseweb="tag"]{background:linear-gradient(90deg,#8d2a35,#a8525a)!important;border:none!important;
+  border-radius:5px!important;color:#fff!important}
+.stApp [data-baseweb="tag"] span{text-transform:uppercase;font-size:.76rem}
+[data-baseweb="popover"] ul li{text-transform:uppercase;font-size:.85rem}
+
+/* faixa de seleção: célula escura + célula "Quantidade" */
+.st-key-faixa_sel [data-baseweb="select"]>div{background:var(--celula)!important;border:none!important;
+  border-radius:14px!important;min-height:2.8rem}
+.st-key-faixa_sel [data-baseweb="select"]>div::before{content:"\1F6D2\FE0E";font-size:1.05rem;margin:0 .3rem 0 .6rem;opacity:.9}
+.st-key-faixa_sel input::placeholder{color:var(--suave)!important}
+.st-key-cel_qtd{background:var(--celula);border-radius:14px;min-height:2.8rem;justify-content:center;padding:0 .6rem}
+.st-key-cel_qtd [data-baseweb="input"],.st-key-cel_qtd [data-baseweb="base-input"]{background:transparent!important}
+.st-key-cel_qtd [data-baseweb="input"] input{color:var(--txt)!important}
+.cel{text-transform:uppercase;letter-spacing:.02em;font-size:.95rem;padding:.55rem .3rem}
+
+/* cartão "Crie novos produtos" e demais expansores */
+[data-testid="stExpander"] details{border-color:rgba(255,255,255,.2);border-radius:14px;background:transparent}
+.st-key-novo_prod [data-testid="stExpander"] details{background:#242222;border:none!important;border-radius:32px;padding:.35rem 1rem .8rem}
+.st-key-novo_prod [data-testid="stExpander"] summary svg,
+.st-key-novo_prod [data-testid="stExpander"] summary [data-testid="stIconMaterial"]{display:none}
+.st-key-novo_prod [data-testid="stExpander"] summary p{text-transform:uppercase;font-size:1.02rem}
+.st-key-novo_prod [data-testid="stExpander"] summary p::before{content:"+ ";font-weight:800;font-size:1.2rem}
+[data-testid="stAlert"]{border-radius:14px}
+
+/* painel de resultados com abas em pílulas */
+.st-key-painel{border:1px solid rgba(240,58,71,.6);border-radius:30px;padding:1.2rem 1.4rem 1.6rem;
+  background:rgba(0,0,0,.14);margin-top:1.2rem}
+.stApp [data-baseweb="tab-list"]{gap:.6rem;border-bottom:none;flex-wrap:wrap}
+.stApp [data-baseweb="tab-highlight"],.stApp [data-baseweb="tab-border"]{display:none}
+.stApp button[data-baseweb="tab"]{border:1px solid var(--linha);border-radius:999px;padding:.15rem 1rem;
+  background:transparent;height:auto;min-height:0}
+.stApp button[data-baseweb="tab"] p{text-transform:uppercase;font-size:.76rem;letter-spacing:.03em}
+.stApp button[data-baseweb="tab"][aria-selected="true"]{border-color:var(--verm)}
+.stApp button[data-baseweb="tab"][aria-selected="true"] p{color:var(--verm)}
+
+/* tabelas em pílulas */
+.pt{display:grid;gap:.7rem .9rem;margin:.9rem 0 .6rem}
+.pt>div{border:1px solid var(--linha);border-radius:999px;padding:.38rem 1rem;text-align:center;
+  text-transform:uppercase;font-size:.85rem;letter-spacing:.02em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pt>.h{border-color:rgba(236,236,236,.28);background:rgba(255,255,255,.05);color:var(--suave)}
+.cmp-wrap{border:1px solid var(--linha);border-radius:20px;overflow-x:auto;margin:.9rem 0 .6rem}
+.cmp{width:100%;border-collapse:collapse;text-transform:uppercase;font-size:.85rem}
+.cmp th{font-weight:400;color:var(--suave);padding:.75rem .6rem;text-align:center;font-size:.78rem;letter-spacing:.03em}
+.cmp td{padding:.7rem .6rem;text-align:center;border-top:1px solid rgba(236,236,236,.16)}
+.cmp tr.best td{border-top:1px solid var(--verm);border-bottom:1px solid var(--verm)}
+.cmp tr.best td:last-child{color:var(--verm)}
+.cmp small{display:block;color:var(--suave);font-size:.66rem;letter-spacing:.05em}
+
+/* carregamento com o ícone da marca */
+.loader{display:flex;align-items:center;gap:.9rem;margin:1.1rem 0 .4rem;text-transform:uppercase;font-size:1rem;letter-spacing:.02em}
+.loader img{height:46px;animation:corre 1.1s ease-in-out infinite}
+@keyframes corre{0%,100%{transform:translateX(-7px)}50%{transform:translateX(7px)}}
+
+/* "Como usar" */
+.passos{display:grid;grid-template-columns:1fr 1fr;gap:1.4rem;margin-top:1.8rem}
+@media (max-width:760px){.passos{grid-template-columns:1fr}}
+.passo{border:1px solid var(--linha);border-radius:46px;padding:1.5rem 2rem 1.6rem}
+.passo .n{color:var(--verm);font-size:.95rem}
+.passo .t{color:var(--verm);font-size:clamp(1.1rem,2.2vw,1.6rem);text-transform:uppercase;line-height:1.1;margin:.1rem 0 .5rem}
+.passo .d{font-size:1.02rem;line-height:1.3;max-width:26rem}
+
+/* telas de entrada */
+.hero{text-align:center;padding:12vh 0 1.4rem}
+.hero .logo-img{margin:0 auto}
+.hero-t{font-size:clamp(2rem,5.5vw,3.7rem);font-weight:500;text-transform:uppercase;line-height:1.06;margin:1rem 0 .5rem;color:var(--titulo)}
+.hero-t span,.slogan span{color:var(--verm)}
+.hero-s{font-size:1.1rem;color:#efe6e6;margin-bottom:1.2rem}
+.form-titulo{color:var(--verm);font-size:1.7rem;text-transform:uppercase;margin:2.6rem 0 1rem}
+.slogan-box{display:flex;align-items:center;justify-content:center;min-height:52vh}
+.slogan{font-size:clamp(1.3rem,2.6vw,2rem);text-transform:uppercase;text-align:center;line-height:1.2;color:var(--titulo)}
+
+/* Refinamento de interface: proporções e escala do protótipo em vídeo. */
+@media (min-width: 901px){
+  .block-container{width:calc(100% - 6.5rem)!important;max-width:1680px!important;padding:1rem 0 5rem!important}
+}
+.stApp{font-size:1.05rem}
+.stApp p,.stApp li{line-height:1.45}
+.stApp h4{font-size:1.2rem}
+.stApp [data-testid="stWidgetLabel"] p{font-size:1rem!important;letter-spacing:.015em}
+.titulo-pagina{font-size:clamp(2.35rem,3.45vw,3.75rem);line-height:1.16;margin:2.5rem 0 2rem;padding-bottom:1.15rem;letter-spacing:0}
+.rotulo{font-size:1.1rem}
+.logo-img{height:48px}
+.st-key-topbar{padding:.45rem 0 1rem;margin-bottom:1rem;border-bottom-color:rgba(255,255,255,.72)}
+.st-key-nav [role="radiogroup"]{gap:1rem;justify-content:center}
+.st-key-nav [role="radiogroup"] label{padding:.38rem 1.4rem;min-width:clamp(9rem,15vw,16rem);min-height:2.65rem;align-items:center}
+.st-key-nav [role="radiogroup"] label p{font-size:1.03rem;line-height:1.2}
+.st-key-btn_ajuda button p,.st-key-btn_ajuda_on button p,.st-key-topbar [data-testid="stPopover"] button p{font-size:2rem!important}
+.stApp button[kind="secondary"],.stApp [data-testid="stBaseButton-secondary"],
+.stApp button[kind="primary"],.stApp [data-testid="stBaseButton-primary"]{min-height:2.85rem;padding:.44rem 1.5rem}
+.stApp button p{font-size:1rem}
+.st-key-area_pesquisar button{min-height:3.3rem!important;border-width:2px!important}
+.st-key-area_pesquisar button p{font-size:1.18rem!important}
+.stApp [data-baseweb="input"],.stApp [data-baseweb="base-input"]{min-height:3.05rem}
+.stApp [data-baseweb="input"] input{font-size:1.07rem!important}
+.stApp input::placeholder{font-size:1rem}
+.stApp [data-baseweb="select"]>div{min-height:3.05rem;font-size:1.06rem}
+.stApp [data-baseweb="select"] input{font-size:1.03rem}
+.stApp [data-baseweb="tag"] span{font-size:.96rem}
+.st-key-faixa_sel [data-baseweb="select"]>div{min-height:3.35rem;border-radius:18px!important}
+.st-key-faixa_sel [data-baseweb="select"]>div::before{font-size:1.3rem}
+.st-key-cel_qtd{min-height:3.35rem;border-radius:18px}
+.cel{font-size:1.15rem;padding:.7rem .5rem}
+.stApp [data-testid="stSlider"] label p{font-size:1.08rem!important}
+.stApp [data-testid="stSlider"] [role="slider"]{transform:scale(1.17)}
+.st-key-novo_prod [data-testid="stExpander"] details{padding:.65rem 1.4rem 1rem}
+.st-key-novo_prod [data-testid="stExpander"] summary p{font-size:1.2rem}
+.st-key-painel{padding:1.7rem 1.8rem 2rem;margin-top:1.8rem}
+.stApp button[data-baseweb="tab"]{padding:.38rem 1.3rem}
+.stApp button[data-baseweb="tab"] p{font-size:.98rem}
+.pt{gap:.85rem 1rem;margin:1.2rem 0 .9rem}
+.pt>div{padding:.62rem 1.2rem;font-size:1.02rem}
+.cmp{font-size:1rem}
+.cmp th{font-size:.95rem;padding:1rem .8rem}
+.cmp td{padding:1rem .8rem}
+.cmp small{font-size:.8rem}
+.loader{font-size:1.2rem;gap:1.1rem}
+.loader img{height:58px}
+.passo{padding:1.8rem 2.3rem}
+.passo .n{font-size:1.1rem}
+.passo .t{font-size:clamp(1.4rem,2.35vw,2.1rem)}
+.passo .d{font-size:1.14rem}
+.hero{padding:10vh 0 1.8rem}
+.hero-t{font-size:clamp(2.7rem,5.8vw,5.2rem)}
+.hero-s{font-size:1.3rem}
+.form-titulo{font-size:2.15rem}
+.slogan{font-size:clamp(1.7rem,2.9vw,2.8rem)}
+@media (max-width:900px){
+ .block-container{max-width:100%!important;width:100%!important;padding:1rem 1.1rem 3rem!important}
+ .titulo-pagina{font-size:clamp(1.8rem,5vw,2.7rem);margin:1.6rem 0 1.4rem}
+ .logo-img{height:36px}
+ .st-key-nav [role="radiogroup"]{gap:.4rem;justify-content:flex-start}
+ .st-key-nav [role="radiogroup"] label{min-width:0;min-height:2.25rem;padding:.2rem .72rem}
+ .st-key-nav [role="radiogroup"] label p{font-size:.77rem}
+ .st-key-painel{padding:1rem}
+ .passos{grid-template-columns:1fr}
+}
+@media (max-width:520px){
+ .block-container{padding-left:.65rem!important;padding-right:.65rem!important}
+ .titulo-pagina{font-size:1.7rem}
+ .st-key-nav [role="radiogroup"] label{padding:.2rem .45rem}
+ .st-key-nav [role="radiogroup"] label p{font-size:.67rem}
+ .pt>div{padding:.42rem .5rem;font-size:.82rem}
+}
+
+/* Botões da tela inicial: grupo centralizado, 8px entre as bordas retas. */
+[data-testid="stHorizontalBlock"]:has(.st-key-ini_criar):has(.st-key-ini_login){
+  justify-content:center!important;
+  align-items:center!important;
+  flex-wrap:nowrap!important;
+  gap:8px!important;
+  column-gap:8px!important;
+}
+/* Corrige o problema anterior: as colunas elásticas deixavam um vazio no centro. */
+[data-testid="stHorizontalBlock"]:has(.st-key-ini_criar):has(.st-key-ini_login)
+  > [data-testid="stColumn"]{
+  flex:0 0 clamp(8.5rem,27vw,10.6rem)!important;
+  width:clamp(8.5rem,27vw,10.6rem)!important;
+  min-width:0!important;
+}
+.st-key-ini_criar,.st-key-ini_login{
+  display:block!important;
+  width:100%!important;
+  margin:0!important;
+}
+.st-key-ini_criar [data-testid="stButton"],
+.st-key-ini_login [data-testid="stButton"]{width:100%!important}
+.st-key-ini_criar button[kind="primary"],
+.st-key-ini_criar [data-testid="stBaseButton-primary"]{
+  width:100%!important;
+  min-width:0!important;
+  border-radius:999px 0 0 999px!important;
+  padding:.38rem .7rem!important;
+}
+.st-key-ini_login button[kind="primary"],
+.st-key-ini_login [data-testid="stBaseButton-primary"]{
+  width:100%!important;
+  min-width:0!important;
+  border-radius:0 999px 999px 0!important;
+  padding:.38rem .7rem!important;
+}
+/* Preferências: layout fiel ao protótipo, com três painéis proporcionais. */
+.st-key-pref_pagina{
+  width:100%!important;max-width:1150px!important;margin:0 auto!important;
+  padding-top:clamp(.65rem,2.5vh,1.6rem)!important;
+}
+.pref-brand{display:flex;justify-content:center;margin:1.05rem 0 .35rem!important}
+.pref-brand .logo-img{height:clamp(38px,4.8vw,56px)!important}
+.pref-heading{
+  text-align:center;text-transform:uppercase;color:#cfd3d9;font-weight:400;
+  font-size:clamp(2.15rem,3.6vw,3.25rem);line-height:1.08;
+  margin:.25rem 0 .95rem!important;
+}
+.pref-heading span{font-size:.42em;vertical-align:baseline;font-weight:600;white-space:nowrap}
+.pref-card-title{font-size:clamp(1.5rem,2.35vw,2.1rem);color:#d0d3da;
+  text-align:center;text-transform:uppercase;line-height:1.12;margin:0!important}
+.pref-card-sub{font-size:1rem;color:#cbd0d5;text-align:center;text-transform:uppercase;
+  margin:0 0 .5rem!important;line-height:1.15}
+.pref-card-sub.req{color:#f03a47}
+.st-key-pref_card_local,.st-key-pref_card_endereco,.st-key-pref_card_modalidade,
+.st-key-pref_card_veiculo,.st-key-pref_card_custos,.st-key-pref_card_multi,
+.st-key-pref_card_lojas,.st-key-pref_card_catalogo,.st-key-pref_card_conta{
+  background:transparent!important;border:1.5px solid #c9cbd2!important;
+  border-radius:34px!important;padding:1rem 1rem 1.2rem!important;
+  min-height:clamp(250px,45vh,345px)!important;
+}
+/* Retira o espaço extra que o Streamlit coloca entre título, campo e rádio. */
+.st-key-pref_card_local [data-testid="stVerticalBlock"],
+.st-key-pref_card_endereco [data-testid="stVerticalBlock"],
+.st-key-pref_card_modalidade [data-testid="stVerticalBlock"],
+.st-key-pref_card_veiculo [data-testid="stVerticalBlock"],
+.st-key-pref_card_custos [data-testid="stVerticalBlock"],
+.st-key-pref_card_multi [data-testid="stVerticalBlock"],
+.st-key-pref_card_lojas [data-testid="stVerticalBlock"],
+.st-key-pref_card_catalogo [data-testid="stVerticalBlock"],
+.st-key-pref_card_conta [data-testid="stVerticalBlock"]{gap:.55rem!important}
+.st-key-pref_pagina [data-testid="stWidgetLabel"] p{
+  font-size:1rem!important;letter-spacing:.01em!important;line-height:1.15!important;
+}
+.st-key-pref_pagina [data-testid="stWidgetLabel"]{margin-bottom:.25rem!important}
+/* Inputs e caixas escuras em formato de pílula, como no vídeo. */
+.st-key-pref_pagina [data-testid="stTextInput"] [data-baseweb="input"],
+.st-key-pref_pagina [data-testid="stTextInput"] [data-baseweb="base-input"],
+.st-key-pref_pagina [data-baseweb="input"],
+.st-key-pref_pagina [data-baseweb="base-input"],
+.st-key-pref_pagina [data-baseweb="select"]>div{
+  background:#242424!important;border:0!important;box-shadow:none!important;
+  border-radius:999px!important;min-height:2.5rem!important;
+}
+.st-key-pref_pagina [data-baseweb="input"] input,
+.st-key-pref_pagina [data-baseweb="base-input"] input{
+  color:#e9e9eb!important;font-size:1.13rem!important;min-height:2.5rem!important;
+  padding-top:.2rem!important;padding-bottom:.2rem!important;
+}
+.st-key-pref_pagina [data-baseweb="select"] div{color:#e9e9eb;font-size:1.13rem!important}
+.st-key-pref_pagina [data-baseweb="select"] input,
+.st-key-pref_pagina [data-baseweb="select"] span{font-size:1.13rem!important}
+.st-key-pref_pagina [data-baseweb="input"] input::placeholder,
+.st-key-pref_pagina [data-baseweb="base-input"] input::placeholder{
+  font-size:1.13rem!important;color:#d8d8dc!important;
+}
+
+.st-key-pref_pagina input::placeholder{color:#c7c8ca!important;opacity:1!important}
+/* Modalidade: cada alternativa vira uma faixa escura de largura igual. */
+.st-key-pref_card_modalidade [role="radiogroup"]{gap:.42rem!important}
+.st-key-pref_card_modalidade [role="radiogroup"] label{
+  display:flex!important;align-items:center!important;box-sizing:border-box!important;
+  width:100%!important;min-height:2.45rem!important;padding:.28rem .8rem!important;
+  background:#242424!important;border-radius:999px!important;margin:0!important;
+}
+.st-key-pref_card_modalidade [role="radiogroup"] label p{
+  font-size:1.07rem!important;line-height:1.15!important;text-transform:uppercase!important;
+}
+.st-key-pref_card_modalidade [role="radiogroup"] label > div:first-child{flex-shrink:0}
+/* Opções que já existiam continuam disponíveis, sem poluir o cartão principal. */
+.st-key-pref_extra_local button,.st-key-pref_extra_endereco button{
+  background:transparent!important;border:0!important;min-height:1.65rem!important;
+  padding:.2rem .25rem!important;box-shadow:none!important;
+  color:#bdc0c5!important;
+}
+.st-key-pref_extra_local button p,.st-key-pref_extra_endereco button p{
+  font-size:.94rem!important;letter-spacing:0!important;text-transform:none!important;
+}
+.pref-nota{text-align:center;font-size:.9rem;line-height:1.12;color:#cfd1d8;
+  text-transform:uppercase;margin:.15rem 0 .25rem!important}
+.pref-footer{text-align:center;font-size:clamp(.9rem,1.35vw,1.16rem);
+  text-transform:uppercase;color:#d5d5dd;white-space:normal;line-height:1.2}
+.pref-footer span{color:#f03a47}
+/* X no alto à direita das preferências, sem alterar o alinhamento dos cartões. */
+.st-key-pref_pagina{position:relative!important}
+.st-key-pref_fechar_topo{
+  position:absolute!important;right:.15rem;top:.25rem;z-index:30!important;
+  width:auto!important;margin:0!important;padding:0!important;
+}
+.st-key-pref_fechar_topo [data-testid="stButton"]{width:auto!important}
+.st-key-pref_fechar_topo button,
+.st-key-pref_fechar_topo button[kind="secondary"]{
+  display:flex!important;align-items:center!important;justify-content:center!important;
+  width:2.8rem!important;height:2.8rem!important;min-width:2.8rem!important;min-height:2.8rem!important;
+  padding:0!important;border:none!important;box-shadow:none!important;
+  background:transparent!important;color:#d8d9dd!important;border-radius:999px!important;
+}
+.st-key-pref_fechar_topo button:hover{
+  color:#f03a47!important;background:rgba(240,58,71,.13)!important;
+}
+.st-key-pref_fechar_topo button p,
+.st-key-pref_fechar_topo [data-testid="stMarkdownContainer"] p{
+  font-size:1.7rem!important;line-height:1!important;margin:0!important;
+  color:inherit!important;
+}
+@media(max-width:800px){
+  .st-key-pref_fechar_topo{right:.25rem;top:.1rem}
+  .st-key-pref_fechar_topo button{width:2.6rem!important;height:2.6rem!important}
+  .pref-brand{padding-left:2rem;padding-right:2rem}
+}
+
+/* Escala uniforme nas três etapas das preferências (não afeta a pesquisa). */
+.st-key-pref_card_local,.st-key-pref_card_endereco,.st-key-pref_card_modalidade,
+.st-key-pref_card_veiculo,.st-key-pref_card_custos,.st-key-pref_card_multi,
+.st-key-pref_card_lojas,.st-key-pref_card_catalogo,.st-key-pref_card_conta{
+  min-height:clamp(300px,47vh,370px)!important;
+  padding:1.08rem 1.12rem 1.25rem!important;
+}
+.st-key-pref_pagina [data-testid="stWidgetLabel"] p{
+  font-size:1.07rem!important;line-height:1.25!important;
+}
+.st-key-pref_pagina [data-baseweb="input"],
+.st-key-pref_pagina [data-baseweb="base-input"],
+.st-key-pref_pagina [data-baseweb="select"]>div{
+  min-height:2.95rem!important;
+}
+.st-key-pref_pagina [data-baseweb="input"] input,
+.st-key-pref_pagina [data-baseweb="base-input"] input{
+  min-height:2.95rem!important;
+  font-size:1.15rem!important;
+}
+.st-key-pref_pagina [data-baseweb="select"] div,
+.st-key-pref_pagina [data-baseweb="select"] span,
+.st-key-pref_pagina [data-baseweb="select"] input{
+  font-size:1.13rem!important;
+}
+/* Etapa 1: o tamanho das alternativas acompanha os demais controles. */
+.st-key-pref_card_modalidade [role="radiogroup"] label{
+  min-height:2.75rem!important;padding:.38rem .75rem!important;
+}
+.st-key-pref_card_modalidade [role="radiogroup"] label p{font-size:1.13rem!important}
+/* Etapa 2: veículo com as mesmas faixas e leitura da modalidade. */
+.st-key-pref_card_veiculo [role="radiogroup"]{gap:.48rem!important}
+.st-key-pref_card_veiculo [role="radiogroup"] label{
+  display:flex!important;align-items:center!important;box-sizing:border-box!important;
+  background:#242424!important;border-radius:999px!important;
+  width:100%!important;min-height:2.75rem!important;
+  padding:.38rem .75rem!important;margin:0!important;
+}
+.st-key-pref_card_veiculo [role="radiogroup"] label p{
+  font-size:1.13rem!important;line-height:1.25!important;
+}
+.st-key-pref_card_veiculo [role="radiogroup"] label>div:first-child{flex-shrink:0}
+/* Etapa 2: valor do combustível/energia, consumo e botões +/-. */
+.st-key-pref_card_custos [data-testid="stNumberInput"] [data-baseweb="input"],
+.st-key-pref_card_custos [data-testid="stNumberInput"] [data-baseweb="base-input"]{
+  min-height:2.95rem!important;overflow:hidden!important;border-radius:999px!important;
+}
+.st-key-pref_card_custos [data-testid="stNumberInput"] input{
+  min-height:2.95rem!important;font-size:1.15rem!important;
+  padding-left:1rem!important;
+}
+.st-key-pref_card_custos [data-testid="stNumberInput"] button{
+  min-height:2.6rem!important;min-width:2.45rem!important;
+  padding:.25rem!important;
+}
+/* Etapa 2: a opção de combinar mercados não pode ficar em letra minúscula. */
+.st-key-pref_card_multi [data-testid="stCheckbox"] label{
+  display:flex!important;align-items:center!important;
+  background:#242424!important;border-radius:18px!important;
+  padding:.6rem .7rem!important;min-height:3.1rem!important;
+}
+.st-key-pref_card_multi [data-testid="stCheckbox"] label p{
+  font-size:1.08rem!important;line-height:1.3!important;
+}
+/* Legendas das etapas 2 e 3: explicações e status também legíveis. */
+.st-key-pref_pagina [data-testid="stCaptionContainer"],
+.st-key-pref_pagina [data-testid="stCaptionContainer"] p{
+  font-size:1.03rem!important;line-height:1.37!important;
+  color:#cdd0d5!important;
+}
+/* Etapa 3: mercados e catálogo, incluindo seletor e botão de salvar. */
+.st-key-pref_card_lojas [data-baseweb="select"]>div,
+.st-key-pref_card_catalogo [data-baseweb="select"]>div{
+  min-height:3rem!important;
+  border-radius:20px!important;
+  padding-top:.15rem!important;padding-bottom:.15rem!important;
+}
+.st-key-pref_card_lojas [data-baseweb="tag"] span,
+.st-key-pref_card_catalogo [data-baseweb="tag"] span{font-size:1.02rem!important}
+.st-key-pref_card_catalogo [data-testid="stButton"] button,
+.st-key-pref_card_conta [data-testid="stButton"] button{
+  min-height:3rem!important;padding:.52rem .95rem!important;
+}
+.st-key-pref_card_catalogo [data-testid="stButton"] button p,
+.st-key-pref_card_conta [data-testid="stButton"] button p{
+  font-size:1.08rem!important;line-height:1.25!important;
+}
+.st-key-pref_card_conta [data-testid="stMarkdownContainer"] p{
+  font-size:1.09rem!important;line-height:1.3!important;overflow-wrap:anywhere;
+}
+/* Ícone de engrenagem da barra superior: aumenta o próprio símbolo, não só o botão. */
+.st-key-btn_cfg button{
+  min-width:3.1rem!important;min-height:3.1rem!important;
+  padding:.08rem .24rem!important;
+  font-size:2.2rem!important;
+  line-height:1!important;
+}
+.st-key-btn_cfg button p,
+.st-key-btn_cfg [data-testid="stMarkdownContainer"] p{
+  font-size:2.2rem!important;line-height:1!important;
+  margin:0!important;
+}
+
+/* ÚNICA navegação: VOLTAR à esquerda e PULAR à direita. */
+.st-key-pref_btn_voltar button,.st-key-pref_btn_pular button{
+  background:transparent!important;border:0!important;box-shadow:none!important;
+  padding:.25rem .1rem!important;min-height:2.1rem!important;
+}
+.st-key-pref_btn_voltar button{justify-content:flex-start!important}
+.st-key-pref_btn_pular button{justify-content:flex-end!important;width:100%!important}
+.st-key-pref_btn_voltar button p{font-size:1rem!important;color:#dbdde0!important}
+.st-key-pref_btn_pular button p{font-size:1.18rem!important;color:#f03a47!important}
+.st-key-btn_cfg button{border:none!important;background:transparent!important;padding:0 .25rem!important;
+  color:var(--txt)!important;font-size:1.55rem!important;min-width:2.4rem!important}
+.st-key-btn_cfg button:hover{color:var(--verm)!important}
+@media(max-width:800px){
+ .st-key-pref_pagina{padding-top:.4rem!important}
+ .pref-brand{margin:.35rem 0!important}
+ .pref-heading{margin:.2rem 0 .7rem!important;font-size:clamp(1.9rem,5vw,2.8rem)}
+ .st-key-pref_card_local,.st-key-pref_card_endereco,.st-key-pref_card_modalidade,
+ .st-key-pref_card_veiculo,.st-key-pref_card_custos,.st-key-pref_card_multi,
+ .st-key-pref_card_lojas,.st-key-pref_card_catalogo,.st-key-pref_card_conta{
+   min-height:0!important;padding:1rem!important;border-radius:27px!important;
+ }
+ .pref-footer{font-size:.85rem}
+}
+.st-key-ini_criar button p,.st-key-ini_login button p{font-size:1rem!important}
+@media (max-width:800px){
+  .pref-card-title{font-size:clamp(1.45rem,4vw,1.95rem)!important}
+  .pref-card-sub{font-size:.95rem!important}
+  .st-key-pref_pagina [data-testid="stWidgetLabel"] p{font-size:1rem!important}
+  .st-key-pref_pagina [data-baseweb="select"] div,
+  .st-key-pref_pagina [data-baseweb="select"] input,
+  .st-key-pref_pagina [data-baseweb="input"] input,
+  .st-key-pref_card_modalidade [role="radiogroup"] label p,
+  .st-key-pref_card_veiculo [role="radiogroup"] label p,
+  .st-key-pref_card_multi [data-testid="stCheckbox"] label p{font-size:1.02rem!important}
+}
+
+
+/* ===============================================================
+   BUSCAÍ | APENAS VISUAL DO PAINEL DE RESULTADOS
+   Referência: abas e comparação em cápsulas (imagem enviada).
+   Nenhum controle, consulta, cálculo ou informação é removido.
+   =============================================================== */
+.st-key-painel{
+  border:1.4px solid rgba(240,58,71,.82)!important;
+  background:rgba(10,9,11,.24)!important;
+  border-radius:30px!important;
+  padding:clamp(1rem,2.1vw,1.7rem)!important;
+  max-width:1380px;
+  margin-left:auto!important;
+  margin-right:auto!important;
+}
+
+/* Cinco abas distribuídas uniformemente, como no protótipo. */
+.st-key-painel [data-baseweb="tab-list"]{
+  display:grid!important;
+  grid-template-columns:repeat(5,minmax(0,1fr))!important;
+  align-items:center!important;
+  gap:clamp(.45rem,1.1vw,1rem)!important;
+  width:100%!important;
+  padding:0 0 .8rem!important;
+  margin:0 0 .65rem!important;
+  border-bottom:0!important;
+}
+.st-key-painel [data-baseweb="tab-list"] > *{min-width:0!important}
+.st-key-painel button[data-baseweb="tab"]{
+  display:flex!important;
+  justify-content:center!important;
+  align-items:center!important;
+  min-width:0!important;
+  width:100%!important;
+  min-height:2.15rem!important;
+  padding:.3rem .45rem!important;
+  border:1.3px solid rgba(236,236,236,.85)!important;
+  border-radius:999px!important;
+  background:rgba(0,0,0,.09)!important;
+  white-space:nowrap!important;
+  box-shadow:none!important;
+}
+.st-key-painel button[data-baseweb="tab"] p{
+  font-size:clamp(.69rem,.95vw,.95rem)!important;
+  font-weight:500!important;
+  line-height:1.2!important;
+  text-align:center!important;
+  white-space:nowrap!important;
+  color:#d1d4d8!important;
+}
+.st-key-painel button[data-baseweb="tab"][aria-selected="true"]{
+  border-color:var(--verm)!important;
+}
+.st-key-painel button[data-baseweb="tab"][aria-selected="true"] p{
+  color:var(--verm)!important;
+}
+
+/* Outras abas: os quadros existentes ganham o mesmo acabamento. */
+.st-key-painel .pt{gap:.55rem .75rem!important;margin:1rem 0 .7rem!important}
+.st-key-painel .pt>div{
+  border:1.2px solid rgba(236,236,236,.85)!important;
+  background:rgba(255,255,255,.01)!important;
+  border-radius:999px!important;
+  padding:.48rem .8rem!important;
+  font-size:clamp(.75rem,.98vw,.98rem)!important;
+  line-height:1.24!important;
+}
+.st-key-painel .pt>.h{
+  background:rgba(255,255,255,.065)!important;
+  border-color:rgba(236,236,236,.55)!important;
+  color:#d0d4d9!important;
+}
+
+/* Comparação: cinco colunas de cápsulas com primeiro mercado destacado. */
+.st-key-painel .cmp-wrap{
+  border:0!important;
+  border-radius:0!important;
+  background:transparent!important;
+  margin:.6rem 0 .8rem!important;
+  padding:0!important;
+  overflow-x:auto!important;
+}
+.st-key-painel table.cmp{
+  width:100%!important;
+  min-width:760px!important;
+  table-layout:fixed!important;
+  border-collapse:separate!important;
+  border-spacing:clamp(.35rem,.9vw,.85rem) .65rem!important;
+  background:transparent!important;
+  text-transform:uppercase;
+  font-size:clamp(.76rem,1vw,.95rem)!important;
+}
+.st-key-painel .cmp th,
+.st-key-painel .cmp td{
+  border:1.25px solid rgba(236,236,236,.87)!important;
+  border-radius:999px!important;
+  padding:.48rem .65rem!important;
+  text-align:center!important;
+  line-height:1.26!important;
+  vertical-align:middle!important;
+  background:rgba(255,255,255,.015)!important;
+  color:#e8e8e8;
+  word-break:normal;
+  overflow-wrap:break-word;
+}
+.st-key-painel .cmp th{
+  color:#d0d4d9!important;
+  font-weight:500!important;
+  background:rgba(255,255,255,.06)!important;
+  white-space:nowrap;
+  font-size:clamp(.7rem,.9vw,.9rem)!important;
+  letter-spacing:.015em;
+}
+.st-key-painel .cmp tr.best td{
+  border-color:var(--verm)!important;
+}
+.st-key-painel .cmp tr.best td:last-child{
+  color:var(--verm)!important;
+  font-weight:700!important;
+}
+.st-key-painel .cmp td small{
+  display:block;
+  margin-top:.1rem;
+  font-size:.7em!important;
+  line-height:1.1!important;
+  color:var(--suave)!important;
+}
+@media(max-width:810px){
+  .st-key-painel [data-baseweb="tab-list"]{gap:.38rem!important}
+  .st-key-painel button[data-baseweb="tab"]{padding:.36rem .15rem!important}
+  .st-key-painel button[data-baseweb="tab"] p{font-size:clamp(.55rem,1.8vw,.77rem)!important}
+  .st-key-painel .cmp-wrap{scrollbar-width:thin}
+  .st-key-painel .pt{column-gap:.45rem!important}
+  .st-key-painel .pt>div{padding:.45rem .35rem!important;font-size:clamp(.67rem,1.8vw,.9rem)!important}
+}
+
+
+/* Acessibilidade: aumenta a área clicável da ajuda (?) e configurações (⚙).
+   O tamanho visual dos ícones permanece praticamente o mesmo. */
+.st-key-btn_ajuda [data-testid="stButton"],
+.st-key-btn_ajuda_on [data-testid="stButton"],
+.st-key-btn_cfg [data-testid="stButton"]{
+  display:flex!important;align-items:center!important;justify-content:center!important;
+  min-width:48px!important;min-height:48px!important;
+}
+.st-key-btn_ajuda button,.st-key-btn_ajuda_on button,.st-key-btn_cfg button{
+  width:48px!important;min-width:48px!important;
+  height:48px!important;min-height:48px!important;
+  display:inline-flex!important;justify-content:center!important;align-items:center!important;
+  padding:0!important;margin:0 auto!important;
+  background:transparent!important;border:0!important;border-radius:50%!important;
+  color:var(--txt)!important;cursor:pointer!important;
+}
+.st-key-btn_ajuda button:hover,.st-key-btn_ajuda_on button:hover,.st-key-btn_cfg button:hover{
+  background:rgba(240,58,71,.14)!important;
+}
+.st-key-btn_ajuda button:focus-visible,.st-key-btn_ajuda_on button:focus-visible,
+.st-key-btn_cfg button:focus-visible{
+  outline:2px solid var(--verm)!important;outline-offset:2px!important;
+}
+.st-key-btn_ajuda button p,.st-key-btn_ajuda_on button p,.st-key-btn_cfg button p{
+  font-size:2rem!important;line-height:1!important;margin:0!important;color:inherit!important;
+}
+.st-key-btn_ajuda_on button,.st-key-btn_ajuda_on button p{color:var(--verm)!important}
+
