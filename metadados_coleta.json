@@ -1,0 +1,31 @@
+{
+  "observacao": "Transcrição das fotos do caderno. Data não foi informada; confirmar antes de importar.",
+  "mercados": [
+    {
+      "nome": "Supermercado Beira Rio",
+      "foto": "102285.jpg"
+    },
+    {
+      "nome": "Delta Supermercados — Dois Córregos",
+      "foto": "102285.jpg / 102286.jpg"
+    },
+    {
+      "nome": "Arena Atacado",
+      "foto": "102286.jpg / 102287.jpg"
+    },
+    {
+      "nome": "Savegnago Supermercados",
+      "foto": "102287.jpg"
+    },
+    {
+      "nome": "Coop",
+      "foto": "102287.jpg"
+    },
+    {
+      "nome": "Assaí Atacadista",
+      "foto": "102288.jpg"
+    }
+  ],
+  "quantidade_precos_observados": 59,
+  "quantidade_prontos": 38
+}

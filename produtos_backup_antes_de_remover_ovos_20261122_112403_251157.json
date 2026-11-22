@@ -1,0 +1,83 @@
+[
+  {
+    "nome": "Arroz 5 kg",
+    "busca": "arroz branco 5kg",
+    "marca": "",
+    "ean": ""
+  },
+  {
+    "nome": "Feijão carioca 1 kg",
+    "busca": "feijão carioca 1kg",
+    "marca": "",
+    "ean": ""
+  },
+  {
+    "nome": "Óleo de soja 900 ml",
+    "busca": "óleo de soja 900ml",
+    "marca": "",
+    "ean": ""
+  },
+  {
+    "nome": "Açúcar 1 kg",
+    "busca": "açúcar 1kg",
+    "marca": "",
+    "ean": ""
+  },
+  {
+    "nome": "Café 500 g",
+    "busca": "café torrado moído 500g",
+    "marca": "",
+    "ean": "",
+    "eans_prioritarios": [
+      "7896045102402"
+    ]
+  },
+  {
+    "nome": "Farinha de trigo 1 kg",
+    "busca": "farinha trigo 1kg",
+    "marca": "",
+    "ean": ""
+  },
+  {
+    "nome": "Leite 1 L",
+    "busca": "leite integral 1l",
+    "marca": "",
+    "ean": ""
+  },
+  {
+    "nome": "Macarrão 500 g",
+    "busca": "macarrão espaguete 500g",
+    "marca": "",
+    "ean": ""
+  },
+  {
+    "nome": "Ovos (dúzia)",
+    "busca": "ovos 12 unidades",
+    "marca": "",
+    "ean": ""
+  },
+  {
+    "nome": "Fermento em pó 100 g",
+    "busca": "fermento pó 100g",
+    "marca": "",
+    "ean": ""
+  },
+  {
+    "nome": "Chocolate em pó 200 g",
+    "busca": "chocolate em pó 200g",
+    "marca": "",
+    "ean": ""
+  },
+  {
+    "nome": "Manteiga 200 g",
+    "busca": "manteiga 200g",
+    "marca": "",
+    "ean": ""
+  },
+  {
+    "nome": "Ovos 20 unidades",
+    "busca": "ovos 20 unidades",
+    "marca": "",
+    "ean": ""
+  }
+]

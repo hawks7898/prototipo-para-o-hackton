@@ -18,6 +18,12 @@ import pandas as pd
 import requests
 import streamlit as st
 
+from precos_reais import (MERCADOS as MERCADOS_REAIS, carregar_catalogo, consultar,
+                          status_ollama, uso_api)
+from precos_manuais import (ADMIN_EMAIL, DadosInvalidos, cadastrar_produto,
+                            listar_precos, remover_preco, remover_produto, salvar_preco,
+                            MAX_IDADE_DIAS)
+
 st.set_page_config(page_title="Buscaí", page_icon="🐇", layout="wide")
 
 
@@ -543,6 +549,171 @@ CSS_BASE = r"""
   .st-key-pref_card_multi [data-testid="stCheckbox"] label p{font-size:1.02rem!important}
 }
 
+
+/* ===============================================================
+   BUSCAÍ | APENAS VISUAL DO PAINEL DE RESULTADOS
+   Referência: abas e comparação em cápsulas (imagem enviada).
+   Nenhum controle, consulta, cálculo ou informação é removido.
+   =============================================================== */
+.st-key-painel{
+  border:1.4px solid rgba(240,58,71,.82)!important;
+  background:rgba(10,9,11,.24)!important;
+  border-radius:30px!important;
+  padding:clamp(1rem,2.1vw,1.7rem)!important;
+  max-width:1380px;
+  margin-left:auto!important;
+  margin-right:auto!important;
+}
+
+/* Cinco abas distribuídas uniformemente, como no protótipo. */
+.st-key-painel [data-baseweb="tab-list"]{
+  display:grid!important;
+  grid-template-columns:repeat(5,minmax(0,1fr))!important;
+  align-items:center!important;
+  gap:clamp(.45rem,1.1vw,1rem)!important;
+  width:100%!important;
+  padding:0 0 .8rem!important;
+  margin:0 0 .65rem!important;
+  border-bottom:0!important;
+}
+.st-key-painel [data-baseweb="tab-list"] > *{min-width:0!important}
+.st-key-painel button[data-baseweb="tab"]{
+  display:flex!important;
+  justify-content:center!important;
+  align-items:center!important;
+  min-width:0!important;
+  width:100%!important;
+  min-height:2.15rem!important;
+  padding:.3rem .45rem!important;
+  border:1.3px solid rgba(236,236,236,.85)!important;
+  border-radius:999px!important;
+  background:rgba(0,0,0,.09)!important;
+  white-space:nowrap!important;
+  box-shadow:none!important;
+}
+.st-key-painel button[data-baseweb="tab"] p{
+  font-size:clamp(.69rem,.95vw,.95rem)!important;
+  font-weight:500!important;
+  line-height:1.2!important;
+  text-align:center!important;
+  white-space:nowrap!important;
+  color:#d1d4d8!important;
+}
+.st-key-painel button[data-baseweb="tab"][aria-selected="true"]{
+  border-color:var(--verm)!important;
+}
+.st-key-painel button[data-baseweb="tab"][aria-selected="true"] p{
+  color:var(--verm)!important;
+}
+
+/* Outras abas: os quadros existentes ganham o mesmo acabamento. */
+.st-key-painel .pt{gap:.55rem .75rem!important;margin:1rem 0 .7rem!important}
+.st-key-painel .pt>div{
+  border:1.2px solid rgba(236,236,236,.85)!important;
+  background:rgba(255,255,255,.01)!important;
+  border-radius:999px!important;
+  padding:.48rem .8rem!important;
+  font-size:clamp(.75rem,.98vw,.98rem)!important;
+  line-height:1.24!important;
+}
+.st-key-painel .pt>.h{
+  background:rgba(255,255,255,.065)!important;
+  border-color:rgba(236,236,236,.55)!important;
+  color:#d0d4d9!important;
+}
+
+/* Comparação: cinco colunas de cápsulas com primeiro mercado destacado. */
+.st-key-painel .cmp-wrap{
+  border:0!important;
+  border-radius:0!important;
+  background:transparent!important;
+  margin:.6rem 0 .8rem!important;
+  padding:0!important;
+  overflow-x:auto!important;
+}
+.st-key-painel table.cmp{
+  width:100%!important;
+  min-width:760px!important;
+  table-layout:fixed!important;
+  border-collapse:separate!important;
+  border-spacing:clamp(.35rem,.9vw,.85rem) .65rem!important;
+  background:transparent!important;
+  text-transform:uppercase;
+  font-size:clamp(.76rem,1vw,.95rem)!important;
+}
+.st-key-painel .cmp th,
+.st-key-painel .cmp td{
+  border:1.25px solid rgba(236,236,236,.87)!important;
+  border-radius:999px!important;
+  padding:.48rem .65rem!important;
+  text-align:center!important;
+  line-height:1.26!important;
+  vertical-align:middle!important;
+  background:rgba(255,255,255,.015)!important;
+  color:#e8e8e8;
+  word-break:normal;
+  overflow-wrap:break-word;
+}
+.st-key-painel .cmp th{
+  color:#d0d4d9!important;
+  font-weight:500!important;
+  background:rgba(255,255,255,.06)!important;
+  white-space:nowrap;
+  font-size:clamp(.7rem,.9vw,.9rem)!important;
+  letter-spacing:.015em;
+}
+.st-key-painel .cmp tr.best td{
+  border-color:var(--verm)!important;
+}
+.st-key-painel .cmp tr.best td:last-child{
+  color:var(--verm)!important;
+  font-weight:700!important;
+}
+.st-key-painel .cmp td small{
+  display:block;
+  margin-top:.1rem;
+  font-size:.7em!important;
+  line-height:1.1!important;
+  color:var(--suave)!important;
+}
+@media(max-width:810px){
+  .st-key-painel [data-baseweb="tab-list"]{gap:.38rem!important}
+  .st-key-painel button[data-baseweb="tab"]{padding:.36rem .15rem!important}
+  .st-key-painel button[data-baseweb="tab"] p{font-size:clamp(.55rem,1.8vw,.77rem)!important}
+  .st-key-painel .cmp-wrap{scrollbar-width:thin}
+  .st-key-painel .pt{column-gap:.45rem!important}
+  .st-key-painel .pt>div{padding:.45rem .35rem!important;font-size:clamp(.67rem,1.8vw,.9rem)!important}
+}
+
+
+/* Acessibilidade: aumenta a área clicável da ajuda (?) e configurações (⚙).
+   O tamanho visual dos ícones permanece praticamente o mesmo. */
+.st-key-btn_ajuda [data-testid="stButton"],
+.st-key-btn_ajuda_on [data-testid="stButton"],
+.st-key-btn_cfg [data-testid="stButton"]{
+  display:flex!important;align-items:center!important;justify-content:center!important;
+  min-width:48px!important;min-height:48px!important;
+}
+.st-key-btn_ajuda button,.st-key-btn_ajuda_on button,.st-key-btn_cfg button{
+  width:48px!important;min-width:48px!important;
+  height:48px!important;min-height:48px!important;
+  display:inline-flex!important;justify-content:center!important;align-items:center!important;
+  padding:0!important;margin:0 auto!important;
+  background:transparent!important;border:0!important;border-radius:50%!important;
+  color:var(--txt)!important;cursor:pointer!important;
+}
+.st-key-btn_ajuda button:hover,.st-key-btn_ajuda_on button:hover,.st-key-btn_cfg button:hover{
+  background:rgba(240,58,71,.14)!important;
+}
+.st-key-btn_ajuda button:focus-visible,.st-key-btn_ajuda_on button:focus-visible,
+.st-key-btn_cfg button:focus-visible{
+  outline:2px solid var(--verm)!important;outline-offset:2px!important;
+}
+.st-key-btn_ajuda button p,.st-key-btn_ajuda_on button p,.st-key-btn_cfg button p{
+  font-size:2rem!important;line-height:1!important;margin:0!important;color:inherit!important;
+}
+.st-key-btn_ajuda_on button,.st-key-btn_ajuda_on button p{color:var(--verm)!important}
+
 """
 
 # O mesmo degradê preto/rosa das preferências em todas as telas.
@@ -642,7 +813,7 @@ def tabela_comparacao(cabecalhos, linhas):
     return f"<div class='cmp-wrap'><table class='cmp'><thead><tr>{cab}</tr></thead><tbody>{corpo}</tbody></table></div>"
 
 
-def barra_quantidade(estado, chave_versao, opcoes, placeholder, rotulo="Produtos"):
+def barra_quantidade(estado, chave_versao, opcoes, placeholder, rotulo="Produtos", opcao_novo=None):
     """Barra no estilo do protótipo: escolher um item abre o seletor de quantidade na célula da direita
     e, depois de confirmar, o item aparece como NOME(qtd). Retorna (quantidades, itens, versao)."""
     itens = st.session_state.setdefault(estado, {})
@@ -650,13 +821,26 @@ def barra_quantidade(estado, chave_versao, opcoes, placeholder, rotulo="Produtos
     for p in [p for p in itens if p not in opcoes]:
         del itens[p]  # item que não existe mais nas opções (ex.: receita apagada)
 
+    # BUSCAI_RECEITAS_SELETOR_NOVO: opção de ação no fim do mesmo seletor.
+    # Não altera o seletor normal de ingredientes (opcao_novo=None).
+    opcoes_da_barra = list(opcoes)
+    if opcao_novo is not None and opcao_novo not in opcoes_da_barra:
+        opcoes_da_barra.append(opcao_novo)
+
     c_sel, c_qtd = st.columns([5, 1.7])
     with c_sel:
         with caixa("faixa_sel"):
             escolhidos = multiselect_sem_todos(
-                rotulo, opcoes, default=list(itens), key=f"{estado}_sel_{versao}",
+                rotulo, opcoes_da_barra, default=list(itens), key=f"{estado}_sel_{versao}",
                 format_func=lambda p: f"{p}({itens[p]})" if p in itens else p,
                 placeholder=placeholder, label_visibility="collapsed")
+
+    # Clicar em '+ Novo' abre o editor; não pede quantidade para essa opção.
+    # Um novo key de widget retira a ação selecionada e preserva receitas escolhidas.
+    if opcao_novo is not None and opcao_novo in escolhidos:
+        st.session_state["nova_receita_aberta"] = True
+        st.session_state[chave_versao] += 1
+        st.rerun()
 
     removidos = [p for p in itens if p not in escolhidos]
     if removidos:
@@ -665,16 +849,22 @@ def barra_quantidade(estado, chave_versao, opcoes, placeholder, rotulo="Produtos
         st.session_state[chave_versao] += 1
         st.rerun()
 
+    # Todos os itens recém-selecionados formam um grupo: a quantidade informada
+    # vale apenas para esse grupo, sem modificar as quantidades já confirmadas.
     novos = [p for p in escolhidos if p not in itens]
     with c_qtd:
         with caixa("cel_qtd"):
             if novos:
-                pend = novos[0]
                 c1, c2 = st.columns([3, 1.3])
-                qtd = c1.number_input("Quantidade", 1, 500, 1, 1, key=f"qpend_{estado}_{versao}_{pend}",
-                                      label_visibility="collapsed")
-                if c2.button("✓", key=f"okpend_{estado}_{versao}_{pend}", help="Confirmar quantidade"):
-                    itens[pend] = int(qtd)
+                qtd = c1.number_input(
+                    "Quantidade", 1, 500, 1, 1,
+                    key=f"qpend_{estado}_{versao}", label_visibility="collapsed",
+                    help=f"Aplicar a mesma quantidade aos {len(novos)} itens recém-selecionados.")
+                if c2.button(
+                    "✓", key=f"okpend_{estado}_{versao}",
+                    help=f"Confirmar {qtd} para os {len(novos)} itens selecionados"):
+                    for produto in novos:
+                        itens[produto] = int(qtd)
                     st.session_state[chave_versao] += 1
                     st.rerun()
             else:
@@ -843,6 +1033,11 @@ def _tela_inicio():
     c1, c2 = st.columns([1, 1])
     c1.button("Criar conta", type="primary", on_click=_ir_tela_cb, args=("cadastro",), key="ini_criar")
     c2.button("Fazer login", type="primary", on_click=_ir_tela_cb, args=("login",), key="ini_login")
+    st.markdown('<div style="text-align:center;margin-top:2rem;font-size:.75rem;opacity:.70">'
+                'Dados de preços e produtos em parceria com '
+                '<a href="https://www.precomelhor.com.br" target="_blank" rel="noopener">'
+                'PreçoMelhor</a> — disponibilidade sujeita à fonte.</div>',
+                unsafe_allow_html=True)
 
 
 def _tela_login():
@@ -886,6 +1081,10 @@ def _tela_cadastro():
                     st.error("Digite um e-mail válido.")
                 elif email in carregar_usuarios():
                     st.error("Esse e-mail já tem conta. Use a opção Entrar.")
+                elif email == ADMIN_EMAIL and not smtp_configurado():
+                    st.error("A conta administrativa não pode ser criada com código "
+                             "de demonstração. Configure a verificação por e-mail "
+                             "ou provisione a conta localmente pelo terminal.")
                 else:
                     codigo = f"{secrets.randbelow(10**6):06d}"
                     c.update(email=email, codigo=codigo, tentativas=0,
@@ -938,7 +1137,10 @@ def _tela_cadastro():
                 horizontal=True, key="cad_veiculo",
                 help="Usado para calcular o gasto com deslocamento. Dá para mudar depois nas preferências.")
             if st.button("Criar conta", type="primary"):
-                if len(s1) < 6:
+                if c.get("email") == ADMIN_EMAIL and c.get("demo"):
+                    st.error("A conta administrativa exige confirmação de e-mail "
+                             "ou provisionamento pelo terminal do servidor.")
+                elif len(s1) < 6:
                     st.error("A senha precisa ter pelo menos 6 caracteres.")
                 elif s1 != s2:
                     st.error("As senhas não conferem.")
@@ -972,24 +1174,47 @@ if "usuario" not in st.session_state:
     tela_acesso()
     st.stop()
 
-# ------------------------------------------------------------------
-# DADOS SIMULADOS (protótipo). Na versão final, virão de uma IA que
-# pesquisa preços e serviços de entrega em tempo real.
-# ------------------------------------------------------------------
-PRODUTOS = {
-    "Arroz 5 kg": 28.90,
-    "Feijão carioca 1 kg": 7.50,
-    "Óleo de soja 900 ml": 6.80,
-    "Açúcar 1 kg": 4.90,
-    "Café 500 g": 17.90,
-    "Farinha de trigo 1 kg": 5.20,
-    "Leite 1 L": 4.80,
-    "Macarrão 500 g": 4.20,
-    "Ovos (dúzia)": 12.50,
-    "Fermento em pó 100 g": 5.90,
-    "Chocolate em pó 200 g": 7.90,
-    "Manteiga 200 g": 11.90,
-}
+# Nunca confiar apenas na exibição do botão: a sessão deve pertencer
+# a uma conta cadastrada que passou pela rotina de senha do login.
+if st.session_state.usuario not in carregar_usuarios():
+    st.session_state.clear()
+    st.rerun()
+
+def usuario_e_admin():
+    return (st.session_state.get("usuario", "").casefold() == ADMIN_EMAIL
+            and st.session_state.get("usuario") in carregar_usuarios())
+
+
+def _linhas_transparencia(cotacoes, itens, administrador):
+    """Monta as colunas autorizadas no servidor, antes de enviá-las ao navegador."""
+    linhas = []
+    for nome_loja, precos_loja in cotacoes.items():
+        for nome_produto in itens:
+            info = precos_loja.get(nome_produto)
+            linha = {
+                'Mercado': nome_loja,
+                'Produto pedido': nome_produto,
+                'Valor': brl(info['valor']) if info else 'Indisponível',
+                'Produto anunciado': info.get('anuncio', '—') if info else '—',
+            }
+            if administrador:
+                linha['Tipo da fonte'] = info.get('tipo', '—') if info else '—'
+                linha['Conferência'] = info.get('verificacao', '—') if info else '—'
+            linha['Link'] = info.get('url', '') if info else ''
+            if administrador:
+                linha['Consulta (UTC)'] = info.get('consultado_em', '—') if info else '—'
+                linha['Coleta da oferta'] = info.get('observado_em', '—') if info else '—'
+                linha['Referência/Comprovante'] = info.get('comprovante', '') if info else '—'
+            else:
+                coleta = str(info.get('observado_em', '') or '') if info else ''
+                linha['Data do preço'] = (coleta.split('T')[0].split(' ')[0]
+                                          if coleta else '—')
+            linhas.append(linha)
+    return linhas
+
+# Catálogo editável em produtos.json. Sem qualquer preço de demonstração.
+# Para acrescentar/alterar produtos basta editar esse JSON e reiniciar o app.
+PRODUTOS = {item['nome']: None for item in carregar_catalogo()}
 
 # Coordenadas aproximadas (apenas para cálculo ilustrativo de distância)
 BAIRROS = {
@@ -1002,39 +1227,13 @@ BAIRROS = {
     "Algodoal": (-22.7200, -47.6700),
 }
 
-# Estabelecimentos REAIS de Piracicaba (endereços informados pelo autor).
-# ATENÇÃO: preços, taxas de entrega e disponibilidade de entrega são SIMULADOS.
+# Cinco redes com presença em Piracicaba e catálogo online. Os preços coletados
+# pertencem ao E-COMMERCE DA REDE, não são confirmados para estas filiais.
+# Taxas de entrega NÃO verificadas: não calculamos uma entrega fictícia.
 LOJAS = [
-    {"nome": "Mercado Municipal de Piracicaba", "endereco": "Praça Dr. Alfredo Cardoso, 1336",
-     "bairro": "Centro",
-     "fator": 1.12, "entrega": False, "taxa": 0, "gratis_acima": 0},
-    {"nome": "Supermercados Pague Menos", "endereco": "Avenida Dona Francisca, 333",
-     "bairro": "Vila Rezende",
-     "fator": 0.96, "entrega": True, "taxa": 8.00, "gratis_acima": 200},
-    {"nome": "Assaí Atacadista", "endereco": "Rua Regente Feijó, 823",
-     "bairro": "Centro",
-     "fator": 0.88, "entrega": False, "taxa": 0, "gratis_acima": 0},
-    {"nome": "Delta Supermercados Areão", "endereco": "Avenida Monsenhor Martinho Salgot, 471",
-     "bairro": "Areão",
-     "fator": 1.02, "entrega": True, "taxa": 9.90, "gratis_acima": 250},
-    {"nome": "Carrefour Hipermercado", "endereco": "Avenida Rui Teixeira Mendes, 300",
-     "bairro": "Terras de Piracicaba",
-     "fator": 1.00, "entrega": True, "taxa": 12.00, "gratis_acima": 300},
-    {"nome": "Savegnago Supermercados", "endereco": "Avenida Professor Alberto Vollet Sachs, 650",
-     "bairro": "Nova América",
-     "fator": 1.01, "entrega": True, "taxa": 9.00, "gratis_acima": 220},
-    {"nome": "Delta Supermercados Luciano Guidotti", "endereco": "Avenida Comendador Luciano Guidotti, 1184",
-     "bairro": "Higienópolis",
-     "fator": 1.03, "entrega": True, "taxa": 9.90, "gratis_acima": 250},
-    {"nome": "Coop Supermercado", "endereco": "Avenida Professor Alberto Vollet Sachs, 2030",
-     "bairro": "Morumbi / Vila Monteiro",
-     "fator": 1.05, "entrega": True, "taxa": 10.00, "gratis_acima": 250},
-    {"nome": "Jaú Serve Supermercados", "endereco": "Rua Governador Pedro de Toledo, 1432",
-     "bairro": "Centro",
-     "fator": 0.97, "entrega": True, "taxa": 6.50, "gratis_acima": 150},
-    {"nome": "JJR Supermercados", "endereco": "Rua Fernando Lopes, 1020",
-     "bairro": "Pauliceia",
-     "fator": 0.99, "entrega": False, "taxa": 0, "gratis_acima": 0},
+    {"nome": nome, "endereco": cfg["endereco"], "bairro": cfg["bairro"],
+     "entrega": False, "taxa": 0, "gratis_acima": 0}
+    for nome, cfg in MERCADOS_REAIS.items()
 ]
 
 MODO_AVULSO = "Itens avulsos"
@@ -1055,9 +1254,9 @@ RECEITA_EXEMPLO = {
 
 
 def preco(loja, produto):
-    """Preço simulado e estável (sempre o mesmo a cada execução)."""
-    rng = random.Random(loja["nome"] + produto)
-    return round(PRODUTOS[produto] * loja["fator"] * rng.uniform(0.96, 1.05), 2)
+    """Cotação REAL da pesquisa atual. Se não foi obtida, retorna None."""
+    registro = st.session_state.get('cotacoes_reais', {}).get(loja['nome'], {}).get(produto)
+    return float(registro['valor']) if registro is not None else None
 
 
 def distancia_km(a, b):
@@ -1286,20 +1485,28 @@ def melhor_combinacao(lojas, origem, quantidades, rotas, custo_km):
             atribuicao = {n: [] for n in grupo}
             produtos = 0.0
             for prod, qtd in quantidades.items():
-                n_min = min(grupo, key=lambda n: precos[n][prod])
+                elegiveis = [n for n in grupo if precos[n].get(prod) is not None]
+                if not elegiveis:
+                    break
+                n_min = min(elegiveis, key=lambda n: precos[n][prod])
                 atribuicao[n_min].append((prod, qtd, precos[n_min][prod]))
                 produtos += precos[n_min][prod] * qtd
-            if any(not itens for itens in atribuicao.values()):
-                continue  # todo mercado do grupo precisa ter algo para comprar
-            ordem, km = min(
-                ((o, rotas[o[0]][0]
-                  + sum(distancia_km(locs[a], locs[b]) for a, b in zip(o, o[1:]))
-                  + rotas[o[-1]][0]) for o in itertools.permutations(grupo)),
-                key=lambda x: x[1])
-            custo = produtos + km * custo_km
-            if melhor is None or custo < melhor["custo"]:
-                melhor = {"ordem": ordem, "atribuicao": atribuicao, "produtos": produtos,
-                          "km": km, "custo": custo}
+            else:
+                # Só compara grupos capazes de oferecer a cesta inteira.
+                if any(not itens for itens in atribuicao.values()):
+                    continue
+                ordem, km = min(
+                    ((o, rotas[o[0]][0]
+                      + sum(distancia_km(locs[a], locs[b]) for a, b in zip(o, o[1:]))
+                      + rotas[o[-1]][0]) for o in itertools.permutations(grupo)),
+                    key=lambda x: x[1])
+                custo = produtos + km * custo_km
+                if melhor is None or custo < melhor["custo"]:
+                    melhor = {"ordem": ordem, "atribuicao": atribuicao, "produtos": produtos,
+                              "km": km, "custo": custo}
+                continue
+            # Faltou um dos itens para todas as lojas do grupo.
+            continue
     if melhor is None:
         return None
 
@@ -1338,6 +1545,43 @@ def receita_por_unidade(receita):
     return dict(receita)  # formato antigo: já estava "por unidade"
 
 
+def avaliar_receitas_para_compra(receitas_salvas, quantidades_compra):
+    """Identifica receitas que podem ser feitas com os itens comprados.
+
+    Usa os ingredientes e o rendimento já salvos para cada usuário. Cada
+    rendimento é calculado *separadamente* (receitas podem disputar insumos).
+    Não consulta preços nem altera dados persistentes.
+    """
+    possiveis, pendentes = [], []
+    for nome, receita in receitas_salvas.items():
+        if not isinstance(receita, dict):
+            continue
+        try:
+            por_unidade = receita_por_unidade(receita)
+            ingredientes = {ing: float(qtd) for ing, qtd in por_unidade.items()
+                            if float(qtd) > 0}
+        except (TypeError, ValueError, ZeroDivisionError):
+            continue
+        if not ingredientes:
+            continue
+
+        faltam = [ing for ing in ingredientes if float(quantidades_compra.get(ing, 0)) <= 0]
+        if faltam:
+            pendentes.append((nome, faltam, False))
+            continue
+
+        # Quantidade máxima de produtos da receita, respeitando embalagens compradas.
+        capacidade = min(float(quantidades_compra[ing]) / qtd
+                         for ing, qtd in ingredientes.items())
+        unidades = math.floor(capacidade + 1e-8)
+        if unidades >= 1:
+            possiveis.append((nome, unidades, ingredientes))
+        else:
+            pendentes.append((nome, [], True))
+
+    return possiveis, pendentes
+
+
 # ---- Callbacks do cadastro de produtos (receitas) ----
 def _salvar_produto_cb():
     nome = st.session_state.get("novo_nome", "").strip()
@@ -1358,6 +1602,12 @@ def _salvar_produto_cb():
     st.session_state["rec_versao"] = st.session_state.get("rec_versao", 0) + 1
     st.session_state["novo_nome"] = ""
     st.session_state["novo_rend"] = 10
+    st.session_state["nova_receita_aberta"] = False
+
+
+def _cancelar_nova_receita_cb():
+    """Fecha o editor, sem modificar receitas já salvas."""
+    st.session_state["nova_receita_aberta"] = False
 
 
 def _exemplo_cb():
@@ -1696,13 +1946,144 @@ elif modo_origem == "Endereço completo":
             st.warning("Não encontrei o endereço configurado. Usando o Centro como origem. "
                        "Você pode corrigir o endereço nas Preferências.")
 
+def _painel_admin_precos():
+    """Painel restrito à sessão autenticada com o e-mail do administrador."""
+    if not usuario_e_admin():
+        st.error("Acesso restrito ao administrador autenticado.")
+        st.stop()
+    titulo("Painel do administrador — preços reais")
+    st.caption("Cadastre valores reais de lojas de Piracicaba. O registro manual só "
+               "é usado quando não existe uma cotação da API para a mesma loja e produto. "
+               "Sem anúncios inventados.")
+    st.info(f"Registros manuais de até {MAX_IDADE_DIAS} dias podem completar a cesta; "
+            "depois disso, ficam no histórico, mas não entram no ranking até serem atualizados.")
+    aba_cadastro, aba_salvos, aba_produtos = st.tabs(
+        ["Cadastrar / atualizar preço", "Preços armazenados", "Adicionar produto"])
+    nomes_mercados = list(MERCADOS_REAIS)
+    nomes_produtos = list(PRODUTOS)
+    with aba_cadastro:
+        with st.form("form_admin_preco", clear_on_submit=False):
+            c1, c2 = st.columns(2)
+            with c1:
+                mercado = st.selectbox("Supermercado e filial", nomes_mercados)
+                produto = st.selectbox("Produto", nomes_produtos)
+                valor = st.number_input("Preço observado (R$)", min_value=0.01,
+                                        max_value=100000.0, step=0.10, value=5.00,
+                                        format="%.2f")
+            with c2:
+                anuncio = st.text_input("Nome exatamente como aparece na oferta",
+                                        placeholder="Ex.: Leite integral Italac 1 L")
+                data_coleta = st.date_input("Data em que conferiu o preço",
+                                            value=__import__('datetime').date.today(),
+                                            max_value=__import__('datetime').date.today())
+                url = st.text_input("Link da oferta (HTTPS, se houver)",
+                                    placeholder="https://...")
+            comprovante = st.text_input(
+                "Referência do encarte, cupom ou comprovante (se não houver link)",
+                placeholder="Ex.: Encarte impresso, loja X, página 2")
+            enviar = st.form_submit_button("💾 Salvar cotação real", type="primary")
+        if enviar:
+            try:
+                registro = salvar_preco(st.session_state.usuario, mercado, produto,
+                                       anuncio, valor, data_coleta, url, comprovante)
+            except (DadosInvalidos, PermissionError) as err:
+                st.error(str(err))
+            else:
+                st.success(f"Preço de R$ {registro['valor']:.2f} registrado para "
+                           f"{produto} no {mercado}, coleta {registro['data_coleta']}.")
+                # Reexibir resultados da última pesquisa apenas após nova busca.
+                st.session_state['pesquisou'] = False
+                st.session_state.pop('cotacoes_reais', None)
+    with aba_salvos:
+        registros = listar_precos()
+        if not registros:
+            st.caption("Ainda não existem preços manuais cadastrados.")
+        else:
+            dados = [{"Mercado": r["mercado"], "Produto": r["produto"],
+                      "Preço": f"R$ {r['valor']:.2f}".replace('.', ','),
+                      "Data da coleta": r["data_coleta"], "Dias": r["idade_dias"],
+                      "Fonte": r["url"] or r["comprovante"],
+                      "Situação": "Utilizável" if r['idade_dias'] <= MAX_IDADE_DIAS
+                                  else "Histórico antigo"} for r in registros]
+            st.dataframe(pd.DataFrame(dados), hide_index=True, use_container_width=True)
+            with st.expander("Excluir cotação cadastrada"):
+                opcoes = [(r['mercado'],r['produto']) for r in registros]
+                selecao = st.selectbox("Cotação a excluir", opcoes,
+                                       format_func=lambda x: f"{x[0]} — {x[1]}")
+                if st.button("Excluir cotação selecionada", key="admin_apagar_preco"):
+                    if usuario_e_admin() and remover_preco(st.session_state.usuario, *selecao):
+                        st.session_state['pesquisou'] = False
+                        st.session_state.pop('cotacoes_reais', None)
+                        st.success("Cotação excluída.")
+                        st.rerun()
+    with aba_produtos:
+        st.caption("Você também pode cadastrar novos itens sem editar produtos.json. "
+                   "O produto ficará disponível na pesquisa após salvar.")
+        with st.form("admin_cadastrar_produto"):
+            nome = st.text_input("Nome do novo produto", placeholder="Ex.: Detergente 500 ml")
+            busca = st.text_input("Descrição para pesquisa", placeholder="Ex.: detergente neutro 500 ml")
+            marca = st.text_input("Marca (opcional)")
+            ean = st.text_input("EAN/GTIN (opcional)", placeholder="Código de barras válido")
+            criar = st.form_submit_button("➕ Adicionar ao catálogo", type="primary")
+        if criar:
+            try:
+                nome_ok = cadastrar_produto(st.session_state.usuario,nome,busca,marca,ean)
+            except (DadosInvalidos, PermissionError, ValueError) as err:
+                st.error(str(err))
+            else:
+                st.success(f"{nome_ok} adicionado ao catálogo.")
+                st.rerun()
+
+        with st.expander("🗑️ Remover produto do catálogo"):
+            st.caption("Exclui o produto da lista de pesquisa e das novas receitas. "
+                       "Os preços já cadastrados permanecem no histórico, e receitas "
+                       "antigas que usavam esse ingrediente poderão precisar de revisão.")
+            versao_exclusao = st.session_state.get("admin_remocao_versao", 0)
+            msg_removido = st.session_state.pop("admin_remocao_sucesso", None)
+            if msg_removido:
+                st.success(f"{msg_removido} removido do catálogo.")
+            produto_remover = st.selectbox(
+                "Produto que deseja remover", nomes_produtos,
+                key=f"admin_produto_remover_{versao_exclusao}")
+            confirmado = st.checkbox(
+                "Confirmo que quero remover este produto do catálogo",
+                key=f"admin_confirmar_remocao_produto_{versao_exclusao}")
+            if st.button("🗑️ Remover produto", key="admin_remover_produto",
+                         disabled=not confirmado or len(nomes_produtos) <= 1):
+                if not usuario_e_admin():
+                    st.error("Apenas o administrador pode remover produtos.")
+                    st.stop()
+                try:
+                    removido = remover_produto(st.session_state.usuario, produto_remover)
+                except (DadosInvalidos, PermissionError, ValueError, OSError) as err:
+                    st.error(str(err))
+                else:
+                    # Invalida apenas resultados e seleções em memória que usavam o produto.
+                    for chave, chave_versao in (("itens", "itens_versao"),
+                                                  ("rec_itens", "rec_versao")):
+                        dados = st.session_state.get(chave)
+                        if isinstance(dados, dict) and removido in dados:
+                            dados.pop(removido, None)
+                            st.session_state[chave_versao] = st.session_state.get(chave_versao, 0) + 1
+                    st.session_state["pesquisou"] = False
+                    st.session_state.pop("cotacoes_reais", None)
+                    st.session_state["admin_remocao_versao"] = versao_exclusao + 1
+                    st.session_state["admin_remocao_sucesso"] = removido
+                    st.rerun()
+
+
 # ---------------- barra superior: logo, navegação, "?" (como usar) e ⚙ (configurações) ----------------
+PAGINA_ADMIN = "🛠 Administração"
 PAGINAS = [PAGINA_PESQUISA, PAGINA_PRODUTOS, PAGINA_HISTORICO]
+if usuario_e_admin():
+    PAGINAS.append(PAGINA_ADMIN)
 st.session_state.setdefault("pagina", PAGINA_PESQUISA)
+if st.session_state["pagina"] not in PAGINAS:
+    st.session_state["pagina"] = PAGINA_PESQUISA
 ajuda_ativa = st.session_state.get("ajuda", False)
 
 with caixa("topbar"):
-    c_logo, c_nav, c_ajuda, c_cfg = colunas([1.5, 6.3, 0.55, 0.55], centro=True)
+    c_logo, c_nav, c_ajuda, c_cfg = colunas([1.5, 6.0, 0.85, 0.85], centro=True)
     c_logo.markdown(logo_html(), unsafe_allow_html=True)
     with c_nav:
         with caixa("nav"):
@@ -1722,6 +2103,14 @@ if pagina is None and not ajuda_ativa:
 if ajuda_ativa:
     titulo("Como usar")
     st.markdown(passos_html(), unsafe_allow_html=True)
+    st.stop()
+
+# A checagem é repetida no handler; manipular a navegação não concede acesso.
+if pagina == PAGINA_ADMIN:
+    if not usuario_e_admin():
+        st.error("Você não tem permissão para acessar esta página.")
+        st.stop()
+    _painel_admin_precos()
     st.stop()
 
 # ---------------- página: histórico de pesquisas ----------------
@@ -1776,9 +2165,13 @@ else:
 
     meus_produtos = {n: receita_por_unidade(r) for n, r in obter_produtos(usuario_atual).items()}
 
+    # A criação e a escolha agora ficam no MESMO seletor, sem expander separado.
+    st.session_state.setdefault("nova_receita_aberta", False)
+    unidades_prod, un_itens, un_versao = barra_quantidade(
+        "un_prod", "un_versao", list(meus_produtos),
+        "Escolha suas receitas ou + Novo", opcao_novo="+ Novo")
+
     if meus_produtos:
-        unidades_prod, un_itens, un_versao = barra_quantidade(
-            "un_prod", "un_versao", list(meus_produtos), "Pesquisar seus produtos")
         with caixa("alt_qtd"):
             c_alt, c_apg, _ = st.columns([1.2, 1.2, 4])
             with c_alt:
@@ -1793,11 +2186,14 @@ else:
                         if c_btn.button("🗑️", key=f"apagar_{nome_salvo}", help=f"Apagar {nome_salvo}"):
                             confirmar_exclusao(nome_salvo)
     else:
-        st.caption("Você ainda não tem produtos salvos. Crie o primeiro abaixo ou use o exemplo.")
+        st.caption("Para criar sua primeira receita, abra a barra acima e escolha **+ Novo**.")
         st.button("✨ Adicionar produto de exemplo", on_click=_exemplo_cb)
 
-    with caixa("novo_prod"):
-        with st.expander("Crie novos produtos", expanded=not meus_produtos):
+    if st.session_state["nova_receita_aberta"]:
+        with caixa("novo_prod", border=True):
+            cabecalho, fechar = colunas([5, 1.5], centro=True)
+            cabecalho.markdown("#### Nova receita")
+            fechar.button("✕ Cancelar", key="cancelar_receita", on_click=_cancelar_nova_receita_cb)
             st.text_input("Nome do produto", key="novo_nome", placeholder="Ex: Bolo de cenoura")
             st.number_input("Quantas unidades essa receita rende?", 1, 10000, 10, 1, key="novo_rend",
                             help="Ex.: se a receita completa rende 10 bolos, digite 10.")
@@ -1820,7 +2216,7 @@ else:
             if rec:
                 with caixa("alt_qtd"):
                     alterar_quantidade(rec, "rec_versao", rv, "rec")
-            st.button("💾 Salvar produto", on_click=_salvar_produto_cb)
+            st.button("💾 Salvar receita", on_click=_salvar_produto_cb)
 
     if meus_produtos:
         necessidade = {}
@@ -1837,24 +2233,95 @@ else:
                                     [(ing, q) for ing, q in quantidades.items()]),
                             unsafe_allow_html=True)
 
+# Cada alteração da lista exige nova pesquisa; nunca reutilizar resultados antigos.
+chave_lista = (tuple(sorted(quantidades.items())), tuple(sorted(preferidos)))
+if st.session_state.get('chave_lista') != chave_lista:
+    st.session_state['pesquisou'] = False
+    st.session_state['chave_lista'] = chave_lista
+    st.session_state.pop('cotacoes_reais', None)
+
+with st.expander('🔗 Fontes de preços e importação opcional', expanded=False):
+    st.caption('Fonte: API pública PreçoMelhor — consulta por filial cadastrada em Piracicaba. '
+               'Preços podem refletir coletas anteriores e não garantem o valor no caixa.')
+    st.markdown(' • '.join(f'[{nome} ({cfg["filial"]})]({cfg["url"]})'
+                           for nome, cfg in MERCADOS_REAIS.items()))
+    limite = uso_api()
+    st.caption(f"Cota de segurança neste computador: {limite['utilizadas_localmente']}/"
+               f"{limite['limite_local']} consultas no {limite['periodo']}. "
+               'Consultas anteriores podem ser reutilizadas por 24 horas.')
+    estado_ia = status_ollama()
+    st.caption(f'IA local Ollama: {estado_ia}. Se indisponível, a conferência de produto '
+               'segue regras determinísticas rigorosas.')
+    st.markdown('Dados de produtos e preços em parceria com '
+                '[PreçoMelhor](https://www.precomelhor.com.br).')
+    st.caption('Preços históricos cadastrados manualmente aparecem somente quando a API não encontra a cotação.\n'
+               'O painel de cadastro é exclusivo do administrador.')
+    somente_salvos = st.checkbox(
+        'Modo apresentação: usar apenas preços salvos (0 chamadas à API)',
+        value=False, help='Consulta cotações guardadas da API e preços históricos do administrador. '
+                          'Não consulta a internet nem usa Ollama.')
+    ignorar_cache = st.checkbox('Forçar atualização online (ignorar cache)',
+                                value=False, disabled=somente_salvos)
+
+
 with caixa("area_pesquisar"):
-    buscar = st.button("🔎 Pesquisar", type="primary", disabled=not quantidades)
+    buscar = st.button('🔎 Pesquisar', type='primary', disabled=not quantidades)
 
 carregador = st.empty()
 if buscar:
-    st.session_state["pesquisou"] = True
-    st.session_state["registrar"] = True
-    carregando(carregador, "Buscando os melhores preços...")
-    time.sleep(1.2)
-
-if not st.session_state.get("pesquisou") or not quantidades:
+    st.session_state['pesquisou'] = True
+    st.session_state['registrar'] = True
+    progress_bar = st.progress(0, text='Consultando os catálogos online...')
+    nomes_lojas = [l['nome'] for l in LOJAS if not preferidos or l['nome'] in preferidos]
+    def progresso_precos(atual, total):
+        progress_bar.progress(atual / max(total, 1), text=f'Consultando os catálogos: {atual}/{total}')
+    with st.spinner('Buscando preços reais, sem valores fictícios...'):
+        resultado_precos, avisos_preco = consultar(
+            quantidades, nomes_lojas, atualizar=ignorar_cache,
+            progresso=progresso_precos, somente_salvos=somente_salvos)
+    progress_bar.empty()
+    st.session_state['cotacoes_reais'] = resultado_precos
+    st.session_state['avisos_cotacoes'] = avisos_preco
     carregador.empty()
-    st.caption("Escolha o que comprar, ajuste as preferências no ⚙ e clique em Pesquisar.")
+
+if not st.session_state.get('pesquisou') or not quantidades:
+    carregador.empty()
+    st.caption('Escolha o que comprar, ajuste as preferências no ⚙ e clique em Pesquisar.')
     st.stop()
+
+cotacoes_reais = st.session_state.get('cotacoes_reais', {})
+if not cotacoes_reais:
+    if usuario_e_admin():
+        st.warning('Não há preços verificados para esta pesquisa. Confira os motivos e o diagnóstico da API.')
+    else:
+        st.warning('Não há preços disponíveis para esta pesquisa no momento.')
+    st.stop()
+
+# A conferência detalhada e os erros de coleta não são enviados ao navegador de usuários comuns.
+admin_na_pesquisa = usuario_e_admin()
+if admin_na_pesquisa:
+    with st.expander('🔍 Preços encontrados e fontes', expanded=True):
+        linhas_preco = _linhas_transparencia(cotacoes_reais, quantidades, admin_na_pesquisa)
+        if admin_na_pesquisa:
+            st.caption('Fonte historico_local_adm = preço real cadastrado manualmente; confira a data da coleta. '
+                       'A API tem prioridade quando retorna um preço da filial correta.')
+        else:
+            st.caption('Os preços podem ter sido coletados em datas anteriores e variar no caixa. '
+                       'Confira a data do preço antes de comprar.')
+        st.dataframe(pd.DataFrame(linhas_preco), hide_index=True, use_container_width=True,
+                     column_config={'Link': st.column_config.LinkColumn('Link da fonte')})
+        if admin_na_pesquisa:
+            faltantes = st.session_state.get('avisos_cotacoes', {})
+            if faltantes:
+                st.caption(f'{len(faltantes)} consultas não retornaram preço verificado.')
+                with st.expander('Ver motivo das consultas sem resultado'):
+                    st.dataframe(pd.DataFrame([{'Consulta': k, 'Motivo': v} for k, v in faltantes.items()]),
+                                 hide_index=True, use_container_width=True)
 
 # ------------------------------------------------------------------
 # CÁLCULOS
 # ------------------------------------------------------------------
+preferidos = [p for p in preferidos if p in {l['nome'] for l in LOJAS}]
 lojas = [l for l in LOJAS if not preferidos or l["nome"] in preferidos]
 aceita_retirada = modalidade in ("Ambas", "Retirar na loja")
 aceita_entrega = modalidade in ("Ambas", "Receber por entrega")
@@ -1867,10 +2334,12 @@ if origem_coord:
         rotas, aviso_rotas = calcular_distancias(origem_coord, lojas)
 if buscar:
     carregando(carregador, "Calculando gastos...")
-    time.sleep(0.9)
 
 linhas = []
 for l in lojas:
+    # Um mercado só entra no ranking se a cesta inteira possuir preços reais.
+    if any(preco(l, p) is None for p in quantidades):
+        continue
     subtotal = sum(preco(l, p) * q for p, q in quantidades.items())
     if origem_coord:
         dist, tempo, fonte, local = rotas[l["nome"]]
@@ -1900,7 +2369,12 @@ for l in lojas:
 carregador.empty()
 if not linhas:
     st.session_state.pop("registrar", None)
-    st.warning("Nenhum estabelecimento atende às preferências escolhidas.")
+    if modalidade == 'Receber por entrega':
+        st.warning('Apenas entrega foi selecionada, mas não há taxas de entrega verificadas. '
+                   'Altere a modalidade para Ambas ou Retirar na loja nas Preferências.')
+    st.warning('Não existe cesta COMPLETA com preços verificados nas lojas selecionadas. '
+               'Consulte os valores parciais e suas fontes na tabela acima. '
+               'Não será exibido ranking fictício.')
     st.stop()
 
 df = pd.DataFrame(linhas)
@@ -1917,6 +2391,7 @@ if st.session_state.pop("registrar", False):
         "melhor": melhor["Estabelecimento"],
         "modalidade": melhor["Melhor modalidade"],
         "custo": float(melhor["Custo total"]),
+        "origem_preco": "PreçoMelhor: catálogo de filial (validar data e preço no caixa)",
     })
 
 # ------------------------------------------------------------------
@@ -1934,9 +2409,11 @@ with caixa("painel"):
         st.markdown(pilulas(["Supermercado", "Preços"],
                             [(r["Estabelecimento"], brl_c(r["Subtotal"])) for _, r in d.iterrows()],
                             larguras="1.8fr 1fr"), unsafe_allow_html=True)
-        st.caption("Preço anunciado, sem considerar deslocamento ou entrega.")
+        st.caption('Preços da API vinculados aos IDs das filiais; confira valores e datas nas fontes. '
+                   'Comparação de cestas completas; sem deslocamento.')
         with st.expander("Ver preço unitário por produto"):
-            tabela = {l["nome"]: {p: brl(preco(l, p)) for p in quantidades} for l in lojas}
+            tabela = {l["nome"]: {p: (brl(preco(l, p)) if preco(l, p) is not None else '—')
+                                  for p in quantidades} for l in lojas}
             st.dataframe(pd.DataFrame(tabela), use_container_width=True)
 
     # ---- Distâncias ----
@@ -1969,13 +2446,50 @@ with caixa("painel"):
         st.markdown(pilulas(
             ["Supermercado", "Preço"],
             [(r["Estabelecimento"],
-              "Não possui" if not r["Entrega?"] else ("Grátis" if r["Taxa entrega"] == 0
+              "Não verificado" if not r["Entrega?"] else ("Grátis" if r["Taxa entrega"] == 0
                                                        else brl_c(r["Taxa entrega"])))
              for _, r in d.iterrows()], larguras="1.8fr 1fr"), unsafe_allow_html=True)
-        st.caption("Taxa de entrega considerando o valor da sua compra.")
+        st.caption('Taxas de entrega não verificadas: esta versão não calcula entrega simulada.')
 
     # ---- Precificação ----
     with abas[3]:
+        # Recomenda receitas cadastradas pelo próprio usuário usando a compra atual.
+        # Não modifica os valores nem a precificação existente.
+        receitas_salvas = obter_produtos(usuario_atual)
+        receitas_possiveis, receitas_pendentes = avaliar_receitas_para_compra(
+            receitas_salvas, quantidades)
+        st.markdown("#### 🍳 Receitas que você pode preparar")
+        if not receitas_salvas:
+            st.caption("Você ainda não tem receitas salvas. Crie uma na aba Meus Produtos.")
+        elif receitas_possiveis:
+            dados_receitas = []
+            for nome_receita, unidades, insumos in receitas_possiveis:
+                custo_insumos = sum(float(preco(loja_ref, ing)) * qtd
+                                    for ing, qtd in insumos.items())
+                dados_receitas.append((
+                    nome_receita,
+                    f"Até {unidades} un.",
+                    brl_c(custo_insumos),
+                ))
+            st.markdown(pilulas(
+                ["Receita salva", "Pode preparar", "Insumos / unidade"],
+                dados_receitas, larguras="1.8fr 1fr 1.2fr"), unsafe_allow_html=True)
+            st.caption("O rendimento é estimado para cada receita separadamente, "
+                       "com as quantidades selecionadas. O custo é só dos ingredientes, "
+                       "sem deslocamento ou entrega.")
+        else:
+            st.info("Sua compra ainda não tem todos os ingredientes e quantidades "
+                    "necessários para preparar uma unidade das receitas salvas.")
+
+        if receitas_pendentes:
+            with st.expander("Ver receitas que ainda não dá para preparar"):
+                for nome_receita, faltam, qtd_insuficiente in receitas_pendentes:
+                    if faltam:
+                        st.write(f"**{nome_receita}** — faltam: {', '.join(faltam)}")
+                    elif qtd_insuficiente:
+                        st.write(f"**{nome_receita}** — ingredientes presentes, "
+                                 "mas quantidades insuficientes.")
+
         st.caption(f"Calculado com os preços de {loja_ref['nome']} (menor custo total).")
         if modo_lista == MODO_FABRICAR and unidades_prod:
             logistica = melhor["Custo total"] - melhor["Subtotal"]  # deslocamento ou entrega
@@ -2022,7 +2536,7 @@ with caixa("painel"):
         rotulo_desloc = "Energia" if veiculo == "eletrico" else "Combustível"
         linhas_cmp = []
         for _, r in ranking.head(limite).iterrows():
-            taxa_txt = ("Não possui" if not r["Entrega?"]
+            taxa_txt = ("Não verificado" if not r["Entrega?"]
                         else ("Grátis" if r["Taxa entrega"] == 0 else brl_c(r["Taxa entrega"])))
             desloc_txt = brl_c(r["Gasto deslocamento"]) if pd.notna(r["Gasto deslocamento"]) else "—"
             linhas_cmp.append([
@@ -2118,4 +2632,6 @@ if len(df) > n_resultados:
         st.button("Recolher" if expandido else "Expandir", on_click=_alternar_expandir_cb,
                   key="btn_expandir")
 
-st.caption("⚠️ Protótipo: os mercados e as distâncias são reais, mas os preços, taxas e entregas são simulados.")
+st.caption('⚠️ Preços consultados em catálogos online e vinculados à rede, não à filial física. '
+           'Preços podem mudar no carrinho. Taxas de entrega não verificadas; '
+           'distâncias e deslocamento podem ser estimados.')

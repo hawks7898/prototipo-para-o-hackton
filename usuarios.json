@@ -18,6 +18,194 @@
     },
     "historico": [
       {
+        "data": "22/11/2026 10:23",
+        "tipo": "Pesquisa",
+        "itens": {
+          "Arroz 5 kg": 1
+        },
+        "melhor": "Savegnago Supermercados",
+        "modalidade": "Retirar",
+        "custo": 29.06222545454545,
+        "origem_preco": "PreçoMelhor: catálogo de filial (validar data e preço no caixa)"
+      },
+      {
+        "data": "22/11/2026 10:07",
+        "tipo": "Pesquisa",
+        "itens": {
+          "Arroz 5 kg": 1
+        },
+        "melhor": "Savegnago Supermercados",
+        "modalidade": "Retirar",
+        "custo": 29.06222545454545,
+        "origem_preco": "PreçoMelhor: catálogo de filial (validar data e preço no caixa)"
+      },
+      {
+        "data": "22/11/2026 09:53",
+        "tipo": "Pesquisa",
+        "itens": {
+          "Arroz 5 kg": 2
+        },
+        "melhor": "Savegnago Supermercados",
+        "modalidade": "Retirar",
+        "custo": 54.962225454545454,
+        "origem_preco": "PreçoMelhor: catálogo de filial (validar data e preço no caixa)"
+      },
+      {
+        "data": "22/11/2026 09:53",
+        "tipo": "Pesquisa",
+        "itens": {
+          "Arroz 5 kg": 2
+        },
+        "melhor": "Savegnago Supermercados",
+        "modalidade": "Retirar",
+        "custo": 54.962225454545454,
+        "origem_preco": "PreçoMelhor: catálogo de filial (validar data e preço no caixa)"
+      },
+      {
+        "data": "22/11/2026 09:53",
+        "tipo": "Pesquisa",
+        "itens": {
+          "Arroz 5 kg": 2
+        },
+        "melhor": "Savegnago Supermercados",
+        "modalidade": "Retirar",
+        "custo": 54.962225454545454,
+        "origem_preco": "PreçoMelhor: catálogo de filial (validar data e preço no caixa)"
+      },
+      {
+        "data": "22/11/2026 09:52",
+        "tipo": "Pesquisa",
+        "itens": {
+          "Arroz 5 kg": 2
+        },
+        "melhor": "Savegnago Supermercados",
+        "modalidade": "Retirar",
+        "custo": 54.962225454545454,
+        "origem_preco": "PreçoMelhor: catálogo de filial (validar data e preço no caixa)"
+      },
+      {
+        "data": "22/11/2026 09:51",
+        "tipo": "Pesquisa",
+        "itens": {
+          "Arroz 5 kg": 1
+        },
+        "melhor": "Savegnago Supermercados",
+        "modalidade": "Retirar",
+        "custo": 29.06222545454545,
+        "origem_preco": "PreçoMelhor: catálogo de filial (validar data e preço no caixa)"
+      },
+      {
+        "data": "22/11/2026 09:48",
+        "tipo": "Pesquisa",
+        "itens": {
+          "Arroz 5 kg": 1,
+          "Feijão carioca 1 kg": 1
+        },
+        "melhor": "Savegnago Supermercados",
+        "modalidade": "Retirar",
+        "custo": 38.55222545454546,
+        "origem_preco": "PreçoMelhor: catálogo de filial (validar data e preço no caixa)"
+      },
+      {
+        "data": "22/11/2026 09:48",
+        "tipo": "Pesquisa",
+        "itens": {
+          "Feijão carioca 1 kg": 1
+        },
+        "melhor": "Assaí Atacadista",
+        "modalidade": "Retirar",
+        "custo": 12.107676363636362,
+        "origem_preco": "PreçoMelhor: catálogo de filial (validar data e preço no caixa)"
+      },
+      {
+        "data": "22/11/2026 09:46",
+        "tipo": "Pesquisa",
+        "itens": {
+          "Óleo de soja 900 ml": 1
+        },
+        "melhor": "Savegnago Supermercados",
+        "modalidade": "Retirar",
+        "custo": 10.112225454545454,
+        "origem_preco": "PreçoMelhor: catálogo de filial (validar data e preço no caixa)"
+      },
+      {
+        "data": "22/11/2026 09:42",
+        "tipo": "Pesquisa",
+        "itens": {
+          "Arroz 5 kg": 1
+        },
+        "melhor": "Savegnago Supermercados",
+        "modalidade": "Retirar",
+        "custo": 29.06222545454545,
+        "origem_preco": "PreçoMelhor: catálogo de filial (validar data e preço no caixa)"
+      },
+      {
+        "data": "22/11/2026 09:41",
+        "tipo": "Pesquisa",
+        "itens": {
+          "Arroz 5 kg": 1
+        },
+        "melhor": "Savegnago Supermercados",
+        "modalidade": "Retirar",
+        "custo": 29.06222545454545,
+        "origem_preco": "PreçoMelhor: catálogo de filial (validar data e preço no caixa)"
+      },
+      {
+        "data": "22/11/2026 09:35",
+        "tipo": "Pesquisa",
+        "itens": {
+          "Arroz 5 kg": 1
+        },
+        "melhor": "Savegnago Supermercados",
+        "modalidade": "Retirar",
+        "custo": 29.06222545454545,
+        "origem_preco": "PreçoMelhor: catálogo de filial (validar data e preço no caixa)"
+      },
+      {
+        "data": "21/11/2026 20:03",
+        "tipo": "Pesquisa",
+        "itens": {
+          "Arroz 5 kg": 1
+        },
+        "melhor": "Savegnago Supermercados",
+        "modalidade": "Retirar",
+        "custo": 29.06222545454545,
+        "origem_preco": "PreçoMelhor: catálogo de filial (validar data e preço no caixa)"
+      },
+      {
+        "data": "21/11/2026 11:53",
+        "tipo": "Pesquisa",
+        "itens": {
+          "Leite 1 L": 1
+        },
+        "melhor": "Jaú Serve Supermercados",
+        "modalidade": "Retirar",
+        "custo": 5.952938181818182,
+        "origem_preco": "e-commerce da rede (sem filial física confirmada)"
+      },
+      {
+        "data": "21/11/2026 11:52",
+        "tipo": "Pesquisa",
+        "itens": {
+          "Feijão carioca 1 kg": 1
+        },
+        "melhor": "Jaú Serve Supermercados",
+        "modalidade": "Retirar",
+        "custo": 9.252938181818182,
+        "origem_preco": "e-commerce da rede (sem filial física confirmada)"
+      },
+      {
+        "data": "21/11/2026 11:50",
+        "tipo": "Pesquisa",
+        "itens": {
+          "Arroz 5 kg": 1
+        },
+        "melhor": "Jaú Serve Supermercados",
+        "modalidade": "Retirar",
+        "custo": 18.75293818181818,
+        "origem_preco": "e-commerce da rede (sem filial física confirmada)"
+      },
+      {
         "data": "21/11/2026 08:01",
         "tipo": "Meus produtos",
         "itens": {
@@ -64,17 +252,16 @@
     "hash": "1b1920b248e2de86a7c2759e31366493e4dd19da5f3177cb61369c46b2d0be23",
     "veiculo": "eletrico",
     "criado_em": "2026-11-21 08:57:14",
-    "historico": [
-      {
-        "data": "21/11/2026 08:57",
-        "tipo": "Pesquisa",
-        "itens": {
+    "historico": [],
+    "produtos": {
+      "marmita de ovo": {
+        "rendimento": 6,
+        "insumos": {
+          "Arroz 5 kg": 1,
+          "Ovos 20 unidades": 1,
           "Feijão carioca 1 kg": 1
-        },
-        "melhor": "Assaí Atacadista",
-        "modalidade": "Retirar",
-        "custo": 7.21218
+        }
       }
-    ]
+    }
   }
 }
