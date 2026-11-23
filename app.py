@@ -531,6 +531,50 @@ def _linhas_transparencia(cotacoes, itens, administrador):
             linhas.append(linha)
     return linhas
 
+
+def _mostrar_resultados_precos(cotacoes, quantidades, n_resultados, expandido, administrador):
+    resumos = []
+    for mercado, precos_loja in cotacoes.items():
+        itens = {p: precos_loja[p] for p in quantidades if p in precos_loja}
+        if not itens:
+            continue
+        subtotal = sum(info['valor'] * quantidades[p] for p, info in itens.items())
+        condicoes = []
+        if len(itens) < len(quantidades):
+            condicoes.append(f'{len(itens)} de {len(quantidades)} produtos')
+        online = [info for info in itens.values() if info.get('canal') == 'retirada online']
+        if online:
+            condicoes.append('Compra online com retirada')
+            if not atende_pedido_minimo(itens, quantidades):
+                minimo = max(info.get('pedido_minimo', 0) for info in online)
+                condicoes.append(f'Abaixo do pedido mínimo de {brl(minimo)}')
+        resumos.append((len(itens), subtotal, mercado, ' · '.join(condicoes)))
+
+    if resumos:
+        ordenados = sorted(resumos, key=lambda r: (-r[0], r[1], r[2]))
+        visiveis = ordenados if expandido else ordenados[:n_resultados]
+        st.markdown(pilulas(['Supermercado', 'Preço dos itens', 'Condições'],
+                            [(mercado, brl(subtotal), condicoes or '—')
+                             for _, subtotal, mercado, condicoes in visiveis],
+                            larguras="1.55fr 1fr 2.2fr"), unsafe_allow_html=True)
+    else:
+        st.info('Nenhum preço disponível para os produtos e mercados selecionados.')
+
+    if resumos or administrador:
+        with st.expander('Preços encontrados e fontes'):
+            linhas_preco = _linhas_transparencia(cotacoes, quantidades, administrador)
+            if linhas_preco:
+                st.dataframe(pd.DataFrame(linhas_preco), hide_index=True, use_container_width=True,
+                             column_config={'Link': st.column_config.LinkColumn('Link da oferta'),
+                                            'Página da filial': st.column_config.LinkColumn('Página da filial')})
+            if administrador:
+                faltantes = st.session_state.get('avisos_cotacoes', {})
+                if faltantes:
+                    st.dataframe(pd.DataFrame([{'Consulta': k, 'Motivo': v} for k, v in faltantes.items()]),
+                                 hide_index=True, use_container_width=True)
+    return len(resumos)
+
+
 # Catálogo editável em produtos.json. Sem qualquer preço de demonstração.
 # Para acrescentar/alterar produtos basta editar esse JSON e reiniciar o app.
 PRODUTOS = {item['nome']: None for item in carregar_catalogo()}
@@ -1527,26 +1571,6 @@ cotacoes_reais = {
 if cotacoes_reais != cotacoes_salvas:
     st.info('Algumas cotações expiraram. Clique em Pesquisar para atualizar.')
     st.session_state['cotacoes_reais'] = cotacoes_reais
-if not cotacoes_reais:
-    if usuario_e_admin():
-        st.warning('Não há preços verificados para esta pesquisa. Confira os motivos e o diagnóstico da API.')
-    else:
-        st.warning('Não há preços disponíveis para esta pesquisa no momento.')
-    st.stop()
-
-# A conferência detalhada e os erros de coleta não são enviados ao navegador de usuários comuns.
-admin_na_pesquisa = usuario_e_admin()
-with st.expander('🔍 Preços encontrados e fontes', expanded=admin_na_pesquisa):
-    linhas_preco = _linhas_transparencia(cotacoes_reais, quantidades, admin_na_pesquisa)
-    st.dataframe(pd.DataFrame(linhas_preco), hide_index=True, use_container_width=True,
-                 column_config={'Link': st.column_config.LinkColumn('Link da oferta'),
-                                'Página da filial': st.column_config.LinkColumn('Página da filial')})
-    if admin_na_pesquisa:
-        faltantes = st.session_state.get('avisos_cotacoes', {})
-        if faltantes:
-            with st.expander('Ver motivo das consultas sem resultado'):
-                st.dataframe(pd.DataFrame([{'Consulta': k, 'Motivo': v} for k, v in faltantes.items()]),
-                             hide_index=True, use_container_width=True)
 
 # ------------------------------------------------------------------
 # CÁLCULOS
@@ -1557,7 +1581,7 @@ aceita_retirada = modalidade in ("Ambas", "Retirar na loja")
 aceita_entrega = modalidade in ("Ambas", "Receber por entrega")
 
 rotas, aviso_rotas = {}, None
-if origem_coord:
+if origem_coord and any(cotacoes_reais.values()):
     if buscar:
         carregando(carregador, "Calculando distâncias...")
     with (contextlib.nullcontext() if buscar else st.spinner("Calculando distâncias reais por rota...")):
@@ -1605,17 +1629,30 @@ for l in lojas:
     })
 
 carregador.empty()
+expandido = st.session_state.get("expandido", False)
+nomes_abas = ["Preços", "Distâncias", "Entrega", "Precificação", "Comparação"] if linhas else ["Preços"]
+painel = caixa("painel")
+with painel:
+    abas = st.tabs(nomes_abas)
+    with abas[0]:
+        n_precos = _mostrar_resultados_precos(
+            cotacoes_reais, quantidades, n_resultados, expandido, usuario_e_admin(),
+        )
 if lojas_abaixo_do_minimo:
     st.info('Os itens online da cesta ficaram abaixo do pedido mínimo em '
-            + ', '.join(lojas_abaixo_do_minimo) + '. Confira as ofertas na tabela de preços.')
+            + ', '.join(lojas_abaixo_do_minimo) + '.')
 if not linhas:
     st.session_state.pop("registrar", None)
     if modalidade == 'Receber por entrega':
         st.warning('Apenas entrega foi selecionada, mas não há taxas de entrega verificadas. '
                    'Altere a modalidade para Ambas ou Retirar na loja nas Preferências.')
-    st.warning('Não existe cesta COMPLETA com preços verificados nas lojas selecionadas. '
-               'Consulte os valores parciais e suas fontes na tabela acima. '
-               'Não será exibido ranking fictício.')
+    elif n_precos and not lojas_abaixo_do_minimo:
+        st.info('Nenhuma das lojas selecionadas tem uma cesta completa para a modalidade escolhida. '
+                'Os preços encontrados aparecem na aba Preços.')
+    if n_precos > n_resultados:
+        with caixa("expandir"):
+            st.button("Recolher" if expandido else "Expandir", on_click=_alternar_expandir_cb,
+                      key="btn_expandir")
     st.stop()
 
 df = pd.DataFrame(linhas)
@@ -1642,24 +1679,9 @@ if st.session_state.pop("registrar", False):
 # ------------------------------------------------------------------
 # RESULTADOS: Preços · Distâncias · Entrega · Precificação · Comparação
 # ------------------------------------------------------------------
-expandido = st.session_state.get("expandido", False)
 limite = len(df) if expandido else n_resultados
 
-with caixa("painel"):
-    abas = st.tabs(["Preços", "Distâncias", "Entrega", "Precificação", "Comparação"])
-
-    # ---- Preços ----
-    with abas[0]:
-        d = df.sort_values("Subtotal").head(limite)
-        st.markdown(pilulas(["Supermercado", "Preços"],
-                            [(r["Estabelecimento"], brl_c(r["Subtotal"])) for _, r in d.iterrows()],
-                            larguras="1.8fr 1fr"), unsafe_allow_html=True)
-        st.caption('A comparação usa cestas completas e considera apenas o valor dos produtos.')
-        with st.expander("Ver preço unitário por produto"):
-            tabela = {l["nome"]: {p: (brl(preco(l, p)) if preco(l, p) is not None else '—')
-                                  for p in quantidades} for l in lojas}
-            st.dataframe(pd.DataFrame(tabela), use_container_width=True)
-
+with painel:
     # ---- Distâncias ----
     with abas[1]:
         if origem_coord is None:
@@ -1871,7 +1893,7 @@ with caixa("painel"):
         if st.checkbox("📊 Mostrar gráfico", value=False):
             st.bar_chart(ranking.head(limite).set_index("Estabelecimento")["Custo total"])
 
-if len(df) > n_resultados:
+if max(len(df), n_precos) > n_resultados:
     with caixa("expandir"):
         st.button("Recolher" if expandido else "Expandir", on_click=_alternar_expandir_cb,
                   key="btn_expandir")
