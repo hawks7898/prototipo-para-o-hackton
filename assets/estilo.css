@@ -74,13 +74,13 @@
 [data-baseweb="popover"] ul li{text-transform:uppercase;font-size:.85rem}
 
 /* faixa de seleção: célula escura + célula "Quantidade" */
-.st-key-faixa_sel [data-baseweb="select"]>div{background:var(--celula)!important;border:none!important;
+:is(.st-key-faixa_sel_itens,.st-key-faixa_sel_un_prod,.st-key-faixa_sel_rec_itens) [data-baseweb="select"]>div{background:var(--celula)!important;border:none!important;
   border-radius:14px!important;min-height:2.8rem}
-.st-key-faixa_sel [data-baseweb="select"]>div::before{content:"\1F6D2\FE0E";font-size:1.05rem;margin:0 .3rem 0 .6rem;opacity:.9}
-.st-key-faixa_sel input::placeholder{color:var(--suave)!important}
-.st-key-cel_qtd{background:var(--celula);border-radius:14px;min-height:2.8rem;justify-content:center;padding:0 .6rem}
-.st-key-cel_qtd [data-baseweb="input"],.st-key-cel_qtd [data-baseweb="base-input"]{background:transparent!important}
-.st-key-cel_qtd [data-baseweb="input"] input{color:var(--txt)!important}
+:is(.st-key-faixa_sel_itens,.st-key-faixa_sel_un_prod,.st-key-faixa_sel_rec_itens) [data-baseweb="select"]>div::before{content:"\1F6D2\FE0E";font-size:1.05rem;margin:0 .3rem 0 .6rem;opacity:.9}
+:is(.st-key-faixa_sel_itens,.st-key-faixa_sel_un_prod,.st-key-faixa_sel_rec_itens) input::placeholder{color:var(--suave)!important}
+:is(.st-key-cel_qtd_itens,.st-key-cel_qtd_un_prod,.st-key-cel_qtd_rec_itens){background:var(--celula);border-radius:14px;min-height:2.8rem;justify-content:center;padding:0 .6rem}
+:is(.st-key-cel_qtd_itens,.st-key-cel_qtd_un_prod,.st-key-cel_qtd_rec_itens) [data-baseweb="input"],:is(.st-key-cel_qtd_itens,.st-key-cel_qtd_un_prod,.st-key-cel_qtd_rec_itens) [data-baseweb="base-input"]{background:transparent!important}
+:is(.st-key-cel_qtd_itens,.st-key-cel_qtd_un_prod,.st-key-cel_qtd_rec_itens) [data-baseweb="input"] input{color:var(--txt)!important}
 .cel{text-transform:uppercase;letter-spacing:.02em;font-size:.95rem;padding:.55rem .3rem}
 
 /* cartão "Crie novos produtos" e demais expansores */
@@ -169,9 +169,9 @@
 .stApp [data-baseweb="select"]>div{min-height:3.05rem;font-size:1.06rem}
 .stApp [data-baseweb="select"] input{font-size:1.03rem}
 .stApp [data-baseweb="tag"] span{font-size:.96rem}
-.st-key-faixa_sel [data-baseweb="select"]>div{min-height:3.35rem;border-radius:18px!important}
-.st-key-faixa_sel [data-baseweb="select"]>div::before{font-size:1.3rem}
-.st-key-cel_qtd{min-height:3.35rem;border-radius:18px}
+:is(.st-key-faixa_sel_itens,.st-key-faixa_sel_un_prod,.st-key-faixa_sel_rec_itens) [data-baseweb="select"]>div{min-height:3.35rem;border-radius:18px!important}
+:is(.st-key-faixa_sel_itens,.st-key-faixa_sel_un_prod,.st-key-faixa_sel_rec_itens) [data-baseweb="select"]>div::before{font-size:1.3rem}
+:is(.st-key-cel_qtd_itens,.st-key-cel_qtd_un_prod,.st-key-cel_qtd_rec_itens){min-height:3.35rem;border-radius:18px}
 .cel{font-size:1.15rem;padding:.7rem .5rem}
 .stApp [data-testid="stSlider"] label p{font-size:1.08rem!important}
 .stApp [data-testid="stSlider"] [role="slider"]{transform:scale(1.17)}

@@ -68,7 +68,7 @@ def salvar_preco(email, mercado, produto, anuncio, valor, data_coleta, url='', c
     if mercado not in MERCADOS or produto not in catalogo:
         raise DadosInvalidos('Selecione um mercado e um produto cadastrados.')
     anuncio = ' '.join(str(anuncio).split())[:250]
-    if len(anuncio) < 5 or _equivalente(catalogo[produto], anuncio) < 65:
+    if len(anuncio) < 5 or _equivalente(catalogo[produto], anuncio, aceitar_nome_catalogo=True) < 65:
         raise DadosInvalidos('O anúncio não corresponde ao produto/embalagem selecionados.')
     centavos = _centavos(valor)
     try:
@@ -135,7 +135,7 @@ def obter_preco(mercado, produto):
     if idade < 0 or idade > MAX_IDADE_DIAS:
         return None
     catalogo=_catalogo()
-    if _equivalente(catalogo[produto], row['anuncio']) < 65:
+    if _equivalente(catalogo[produto], row['anuncio'], aceitar_nome_catalogo=True) < 65:
         return None
     return {
         'mercado': mercado, 'produto': produto, 'anuncio': row['anuncio'],

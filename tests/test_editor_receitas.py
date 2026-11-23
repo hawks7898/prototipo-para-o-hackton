@@ -8,7 +8,7 @@ from precos_reais import carregar_catalogo
 
 def test_editor_de_receita_e_produtos_salvos_tem_controles_independentes(monkeypatch):
     email = 'teste@example.invalid'
-    ingrediente = carregar_catalogo()[0]['nome']
+    ingrediente, *novos_ingredientes = [item['nome'] for item in carregar_catalogo()[:3]]
     arquivo_app = Path(__file__).resolve().parents[1] / 'app.py'
     ler_arquivo = Path.read_text
 
@@ -38,3 +38,13 @@ def test_editor_de_receita_e_produtos_salvos_tem_controles_independentes(monkeyp
     assert not app.exception
     assert app.session_state['rec_itens'][ingrediente] == 3
     assert app.session_state['un_prod']['Receita salva'] == 1
+
+    seletor = app.multiselect(key='rec_itens_sel_1')
+    seletor.set_value([ingrediente, *novos_ingredientes]).run()
+    assert next(botao for botao in app.button if 'Salvar receita' in botao.label).disabled
+    app.number_input(key='qpend_rec_itens_1').set_value(2)
+    app.button(key='okpend_rec_itens_1').click().run()
+
+    assert not app.exception
+    assert app.session_state['rec_itens'] == {ingrediente: 3, **dict.fromkeys(novos_ingredientes, 2)}
+    assert not next(botao for botao in app.button if 'Salvar receita' in botao.label).disabled

@@ -288,7 +288,7 @@ _ATRIBUTOS = {
 }
 
 
-def _equivalente(alvo: dict, anuncio: str, ean: str = '') -> float:
+def _equivalente(alvo: dict, anuncio: str, ean: str = '', *, aceitar_nome_catalogo=False) -> float:
     """Regra obrigatória ANTES da IA: produto, tamanho, tipo, EAN e marca."""
     consulta = _normalizar(alvo.get('busca') or alvo['nome'])
     titulo = _normalizar(anuncio)
@@ -312,6 +312,11 @@ def _equivalente(alvo: dict, anuncio: str, ean: str = '') -> float:
         if veto not in consulta and veto in titulo: return 0
     for atributo in _ATRIBUTOS.get(categoria, ()):
         if atributo in consulta.split() and atributo not in titulo.split(): return 0
+    if aceitar_nome_catalogo:
+        # Separa números e unidades para comparar, por exemplo, "500g" e "500 g".
+        tokens = r'[^\W\d_]+|\d+|[^\w\s]'
+        if re.findall(tokens, titulo) == re.findall(tokens, _normalizar(alvo['nome'])):
+            return 100.0
     original = re.sub(r'\d+(?:[,.]\d+)?\s*(kg|g|ml|l|unidades?|un|ovos|rolos?)\b|\([^)]*\)', ' ', consulta)
     score = fuzz.token_set_ratio(original, titulo) if fuzz else __import__('difflib').SequenceMatcher(None, original, titulo).ratio()*100
     return float(score) if score >= 65 else 0.0

@@ -129,7 +129,7 @@ def barra_quantidade(estado, chave_versao, opcoes, placeholder, rotulo="Produtos
 
     c_sel, c_qtd = st.columns([5, 1.7])
     with c_sel:
-        with caixa("faixa_sel"):
+        with caixa(f"faixa_sel_{estado}"):
             escolhidos = multiselect_sem_todos(
                 rotulo, opcoes_da_barra, default=list(itens), key=f"{estado}_sel_{versao}",
                 format_func=lambda p: f"{p}({itens[p]})" if p in itens else p,
@@ -153,7 +153,7 @@ def barra_quantidade(estado, chave_versao, opcoes, placeholder, rotulo="Produtos
     # vale apenas para esse grupo, sem modificar as quantidades já confirmadas.
     novos = [p for p in escolhidos if p not in itens]
     with c_qtd:
-        with caixa("cel_qtd"):
+        with caixa(f"cel_qtd_{estado}"):
             if novos:
                 c1, c2 = st.columns([3, 1.3])
                 qtd = c1.number_input(
@@ -600,6 +600,19 @@ def _mostrar_resultados_precos(cotacoes, quantidades, n_resultados, expandido, a
     return len(resumos)
 
 
+def _mostrar_precificacao_por_mercado(lojas, cotacoes, quantidades):
+    st.markdown("#### Preços unitários por mercado")
+    for loja in lojas:
+        mercado = loja['nome']
+        precos = cotacoes.get(mercado, {})
+        valores = [brl(precos[p]['valor']) if p in precos else 'Sem cotação' for p in quantidades]
+        tabela = pd.DataFrame(
+            [valores], columns=list(quantidades), index=pd.Index([mercado], name='Mercado'),
+        )
+        with st.expander(mercado):
+            st.dataframe(tabela)
+
+
 def _mostrar_comparacao(lojas, cotacoes, quantidades, ranking, veiculo, n_resultados, expandido):
     linhas = []
     elegiveis = set()
@@ -1007,31 +1020,6 @@ def confirmar_exclusao(nome):
         st.rerun()
     if c2.button("Cancelar"):
         st.rerun()
-
-
-def _decorador_dialogo(titulo):
-    try:
-        return st.dialog(titulo, dismissible=False)
-    except TypeError:  # versões antigas do Streamlit
-        return st.dialog(titulo)
-
-
-def _corpo_dialogo(produto, estado, chave_versao):
-    st.write(f"**{produto}**")
-    qtd = st.number_input("Quantidade", 1, 500, 1, 1, key=f"qtd_{estado}")
-    c1, c2 = st.columns(2)
-    if c1.button("Adicionar", type="primary", key=f"add_{estado}"):
-        st.session_state[estado][produto] = int(qtd)
-        st.session_state[chave_versao] += 1
-        st.rerun()
-    if c2.button("Cancelar", key=f"cancel_{estado}"):
-        st.session_state[chave_versao] += 1  # recria a barra sem o item
-        st.rerun()
-
-
-@_decorador_dialogo("Quantas unidades a receita usa?")
-def perguntar_insumo(produto):
-    _corpo_dialogo(produto, "rec_itens", "rec_versao")
 
 
 def alterar_quantidade(itens, chave_versao, versao, prefixo):
@@ -1545,26 +1533,17 @@ else:
             st.text_input("Nome do produto", key="novo_nome", placeholder="Ex: Bolo de cenoura")
             st.number_input("Quantas unidades essa receita rende?", 1, 10000, 10, 1, key="novo_rend",
                             help="Ex.: se a receita completa rende 10 bolos, digite 10.")
-            rec = st.session_state.setdefault("rec_itens", {})
-            rv = st.session_state.setdefault("rec_versao", 0)
-            escolhidos_rec = multiselect_sem_todos(
-                "Ingredientes da receita", list(PRODUTOS), default=list(rec), key=f"rec_sel_{rv}",
-                format_func=lambda p: f"{p}({rec[p]})" if p in rec else p,
-                placeholder="Escolha ou pesquise",
-                help="Ao adicionar um ingrediente, o app pergunta quantas unidades a receita usa.")
-            removidos_rec = [p for p in rec if p not in escolhidos_rec]
-            if removidos_rec:
-                for p in removidos_rec:
-                    del rec[p]
-                st.session_state["rec_versao"] += 1
-                st.rerun()
-            novos_rec = [p for p in escolhidos_rec if p not in rec]
-            if novos_rec:
-                perguntar_insumo(novos_rec[0])
+            _, rec, rv = barra_quantidade(
+                "rec_itens", "rec_versao", list(PRODUTOS), "Escolha ou pesquise",
+                rotulo="Ingredientes da receita",
+            )
             if rec:
                 with caixa("alt_qtd_ingredientes"):
                     alterar_quantidade(rec, "rec_versao", rv, "rec")
-            st.button("💾 Salvar receita", on_click=_salvar_produto_cb)
+            st.button(
+                "💾 Salvar receita", on_click=_salvar_produto_cb,
+                disabled=any(p not in rec for p in st.session_state[f"rec_itens_sel_{rv}"]),
+            )
 
     if meus_produtos:
         necessidade = {}
@@ -1711,6 +1690,8 @@ with painel:
         n_precos = _mostrar_resultados_precos(
             cotacoes_reais, quantidades, n_resultados, expandido, usuario_e_admin(),
         )
+    with abas[3]:
+        _mostrar_precificacao_por_mercado(lojas, cotacoes_reais, quantidades)
     with abas[-1]:
         n_comparacoes = _mostrar_comparacao(
             lojas, cotacoes_reais, quantidades, ranking, veiculo, n_resultados, expandido,
@@ -1746,21 +1727,6 @@ if not linhas:
         if retirada_online:
             st.info('Cotação para compra online com retirada em ' + ', '.join(retirada_online) + '.')
         st.caption('Nenhum valor de entrega foi confirmado para esta cesta.')
-    with abas[3]:
-        custos_itens = [
-            (mercado, produto, brl(cotacao['valor']), brl(cotacao['valor'] * quantidades[produto]))
-            for mercado, precos_loja in cotacoes_reais.items()
-            for produto, cotacao in precos_loja.items() if produto in quantidades
-        ]
-        if custos_itens:
-            st.markdown(pilulas(
-                ["Supermercado", "Produto", "Preço unitário", "Custo dos itens"],
-                custos_itens, larguras="1.6fr 1.25fr 1fr 1fr",
-            ), unsafe_allow_html=True)
-            st.caption('Valores dos itens cotados. O custo total e a margem ficam disponíveis '
-                       'quando houver uma cesta que atenda às condições de compra.')
-        else:
-            st.info('Os custos aparecem aqui quando houver preços para os itens selecionados.')
     if modalidade == 'Receber por entrega':
         st.warning('Apenas entrega foi selecionada, mas não há taxas de entrega verificadas. '
                    'Altere a modalidade para Ambas ou Retirar na loja nas Preferências.')

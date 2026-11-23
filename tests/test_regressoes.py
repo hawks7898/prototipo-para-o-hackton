@@ -30,11 +30,27 @@ def test_combinacao_reavalia_atribuicao_para_cumprir_pedido_minimo(minimo, custo
 
 def test_link_malformado_gera_erro_de_validacao(monkeypatch):
     mercado = next(iter(precos_manuais.MERCADOS))
-    monkeypatch.setattr(precos_manuais, '_catalogo', lambda: {'Arroz 5 kg': {}})
-    monkeypatch.setattr(precos_manuais, '_equivalente', lambda *_: 100)
+    monkeypatch.setattr(precos_manuais, '_catalogo', lambda: {'Arroz 5 kg': {'nome': 'Arroz 5 kg'}})
 
     with pytest.raises(precos_manuais.DadosInvalidos, match='HTTPS público'):
         precos_manuais.salvar_preco(
             precos_manuais.ADMIN_EMAIL, mercado, 'Arroz 5 kg', 'Arroz 5 kg', 10,
             date.today(), url='https://[',
         )
+
+
+def test_cotacao_manual_aceita_nome_do_catalogo_com_unidade_junta(monkeypatch, tmp_path):
+    monkeypatch.setattr(precos_manuais, 'DB_ARQUIVO', tmp_path / 'precos.sqlite3')
+    mercado, produto = 'Supermercado Beira Rio', 'Café 500 g'
+
+    def salvar(anuncio):
+        return precos_manuais.salvar_preco(
+            precos_manuais.ADMIN_EMAIL, mercado, produto, anuncio, '23,99',
+            date.today(), comprovante='Cupom do supermercado',
+        )
+
+    assert salvar('café 500g')['valor'] == 23.99
+    assert precos_manuais.obter_preco(mercado, produto)['valor'] == 23.99
+    for anuncio_incompativel in ('café 250g', 'café solúvel 500g'):
+        with pytest.raises(precos_manuais.DadosInvalidos, match='não corresponde'):
+            salvar(anuncio_incompativel)
