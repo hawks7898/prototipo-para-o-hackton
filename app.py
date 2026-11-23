@@ -18,7 +18,7 @@ import streamlit as st
 
 from fontes_encartes import DELTA_MERCADO, DELTA_URL
 from fontes_folhetos import ARENA_MERCADO, ARENA_URL
-from fontes_savegnago import SAVEGNAGO_MERCADO
+from fontes_savegnago import SAVEGNAGO_MERCADO, _caminho_produto
 from ollama_local import status_leitura_encarte
 from precos_reais import (MERCADOS as MERCADOS_REAIS, TTL_HORAS, carregar_catalogo,
                           consultar, cotacao_vigente, precomelhor_ativo, uso_api)
@@ -585,18 +585,17 @@ def _mostrar_resultados_precos(cotacoes, quantidades, n_resultados, expandido, a
     else:
         st.info('Nenhum preço disponível para os produtos e mercados selecionados.')
 
-    if resumos or administrador:
+    if administrador:
         with st.expander('Preços encontrados e fontes'):
             linhas_preco = _linhas_transparencia(cotacoes, quantidades, administrador)
             if linhas_preco:
                 st.dataframe(pd.DataFrame(linhas_preco), hide_index=True, use_container_width=True,
                              column_config={'Link': st.column_config.LinkColumn('Link da oferta'),
                                             'Página da filial': st.column_config.LinkColumn('Página da filial')})
-            if administrador:
-                faltantes = st.session_state.get('avisos_cotacoes', {})
-                if faltantes:
-                    st.dataframe(pd.DataFrame([{'Consulta': k, 'Motivo': v} for k, v in faltantes.items()]),
-                                 hide_index=True, use_container_width=True)
+            faltantes = st.session_state.get('avisos_cotacoes', {})
+            if faltantes:
+                st.dataframe(pd.DataFrame([{'Consulta': k, 'Motivo': v} for k, v in faltantes.items()]),
+                             hide_index=True, use_container_width=True)
     return len(resumos)
 
 
@@ -611,6 +610,29 @@ def _mostrar_precificacao_por_mercado(lojas, cotacoes, quantidades):
         )
         with st.expander(mercado):
             st.dataframe(tabela)
+
+
+def _mostrar_botao_comprar(cotacoes, quantidades):
+    precos = cotacoes.get(SAVEGNAGO_MERCADO, {})
+    links = {}
+    for produto in quantidades:
+        cotacao = precos.get(produto, {})
+        url = cotacao.get('url')
+        if cotacao.get('tipo') == 'catalogo_savegnago' and _caminho_produto(url):
+            links[produto] = url
+
+    if not links:
+        st.button('Comprar', disabled=True)
+        st.caption('Nenhum item desta pesquisa tem um link direto de compra.')
+        return
+
+    produto = next(iter(links))
+    if len(links) > 1:
+        produto = st.selectbox('Produto para comprar', list(links), key='produto_para_comprar')
+    st.caption(f'{produto} · {SAVEGNAGO_MERCADO}')
+    if len(links) < len(quantidades):
+        st.caption('Alguns itens da lista estão sem link direto de compra.')
+    st.link_button('Comprar', links[produto], type='primary')
 
 
 def _mostrar_comparacao(lojas, cotacoes, quantidades, ranking, veiculo, n_resultados, expandido):
@@ -1727,6 +1749,8 @@ if not linhas:
         if retirada_online:
             st.info('Cotação para compra online com retirada em ' + ', '.join(retirada_online) + '.')
         st.caption('Nenhum valor de entrega foi confirmado para esta cesta.')
+    with abas[4]:
+        _mostrar_botao_comprar(cotacoes_reais, quantidades)
     if modalidade == 'Receber por entrega':
         st.warning('Apenas entrega foi selecionada, mas não há taxas de entrega verificadas. '
                    'Altere a modalidade para Ambas ou Retirar na loja nas Preferências.')
@@ -1964,6 +1988,7 @@ with painel:
 
         if st.checkbox("📊 Mostrar gráfico", value=False):
             st.bar_chart(ranking.head(limite).set_index("Estabelecimento")["Custo total"])
+        _mostrar_botao_comprar(cotacoes_reais, quantidades)
 
 if max(n_precos, n_comparacoes) > n_resultados:
     with caixa("expandir"):

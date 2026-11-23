@@ -387,6 +387,18 @@
     "criado_em": "2026-11-21 08:57:14",
     "historico": [
       {
+        "data": "23/11/2026 11:27",
+        "tipo": "Pesquisa",
+        "itens": {
+          "Macarrão 500 g": 1,
+          "Arroz 5 kg": 1
+        },
+        "melhor": "Assaí Atacadista",
+        "modalidade": "Retirar",
+        "custo": 34.397676363636364,
+        "origem_preco": "Coleta manual"
+      },
+      {
         "data": "23/11/2026 10:34",
         "tipo": "Pesquisa",
         "itens": {
