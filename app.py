@@ -90,20 +90,24 @@ def passos_html():
     return f"<div class='passos'>{cartoes}</div>"
 
 
-def pilulas(cabecalhos, linhas, larguras=None):
+def pilulas(cabecalhos, linhas, larguras=None, *, renderizar_primeira=None):
     """Tabela em 'pílulas': a primeira coluna mais larga, cabeçalho em tom mais claro."""
     larguras = larguras or ("1.8fr " + " ".join(["1fr"] * (len(cabecalhos) - 1)))
     celulas = "".join(f"<div class='h'>{esc(c)}</div>" for c in cabecalhos)
     for linha in linhas:
-        celulas += "".join(f"<div title='{esc(v)}'>{esc(v)}</div>" for v in linha)
+        for i, valor in enumerate(linha):
+            if i == 0 and renderizar_primeira:
+                celulas += f"<div title='{esc(valor)}'>{renderizar_primeira(valor)}</div>"
+            else:
+                celulas += f"<div title='{esc(valor)}'>{esc(valor)}</div>"
     return f"<div class='pt' style='grid-template-columns:{larguras}'>{celulas}</div>"
 
 
-def tabela_comparacao(cabecalhos, linhas):
-    """Tabela da comparação final; a primeira linha (melhor opção) fica destacada. As células já vêm escapadas."""
+def tabela_comparacao(cabecalhos, linhas, *, destacar_primeira):
+    """Renderiza as células escapadas e destaca a melhor cesta quando houver."""
     cab = "".join(f"<th>{esc(c)}</th>" for c in cabecalhos)
     corpo = "".join(
-        ("<tr class='best'>" if i == 0 else "<tr>")
+        ("<tr class='best'>" if destacar_primeira and i == 0 else "<tr>")
         + "".join(f"<td>{c}</td>" for c in linha) + "</tr>"
         for i, linha in enumerate(linhas))
     return f"<div class='cmp-wrap'><table class='cmp'><thead><tr>{cab}</tr></thead><tbody>{corpo}</tbody></table></div>"
@@ -532,23 +536,41 @@ def _linhas_transparencia(cotacoes, itens, administrador):
     return linhas
 
 
+def _resumir_precos_mercado(precos, quantidades):
+    itens = {p: precos[p] for p in quantidades if p in precos}
+    subtotal = sum(info['valor'] * quantidades[p] for p, info in itens.items())
+    condicoes = []
+    if 0 < len(itens) < len(quantidades):
+        condicoes.append(f'{len(itens)} de {len(quantidades)} produtos')
+    online = [info for info in itens.values() if info.get('canal') == 'retirada online']
+    if online:
+        condicoes.append('Compra online com retirada')
+        if not atende_pedido_minimo(itens, quantidades):
+            minimo = max(info.get('pedido_minimo', 0) for info in online)
+            condicoes.append(f'Abaixo do pedido mínimo de {brl(minimo)}')
+    return len(itens), subtotal, ' · '.join(condicoes)
+
+
+def _nome_mercado_com_faltantes(mercado, precos, quantidades, subtitulo=''):
+    nome = esc(mercado)
+    if subtitulo:
+        nome += f'<small>{esc(subtitulo)}</small>'
+    faltantes = [produto for produto in quantidades if produto not in precos]
+    if 0 < len(faltantes) < len(quantidades):
+        itens = ''.join(f'<li>{esc(produto)}</li>' for produto in faltantes)
+        return (
+            f"<details class='mercado-faltantes'><summary>{nome}</summary>"
+            f"<div>Produtos sem cotação<ul>{itens}</ul></div></details>"
+        )
+    return nome
+
+
 def _mostrar_resultados_precos(cotacoes, quantidades, n_resultados, expandido, administrador):
     resumos = []
     for mercado, precos_loja in cotacoes.items():
-        itens = {p: precos_loja[p] for p in quantidades if p in precos_loja}
-        if not itens:
-            continue
-        subtotal = sum(info['valor'] * quantidades[p] for p, info in itens.items())
-        condicoes = []
-        if len(itens) < len(quantidades):
-            condicoes.append(f'{len(itens)} de {len(quantidades)} produtos')
-        online = [info for info in itens.values() if info.get('canal') == 'retirada online']
-        if online:
-            condicoes.append('Compra online com retirada')
-            if not atende_pedido_minimo(itens, quantidades):
-                minimo = max(info.get('pedido_minimo', 0) for info in online)
-                condicoes.append(f'Abaixo do pedido mínimo de {brl(minimo)}')
-        resumos.append((len(itens), subtotal, mercado, ' · '.join(condicoes)))
+        quantidade, subtotal, condicoes = _resumir_precos_mercado(precos_loja, quantidades)
+        if quantidade:
+            resumos.append((quantidade, subtotal, mercado, condicoes))
 
     if resumos:
         ordenados = sorted(resumos, key=lambda r: (-r[0], r[1], r[2]))
@@ -556,7 +578,10 @@ def _mostrar_resultados_precos(cotacoes, quantidades, n_resultados, expandido, a
         st.markdown(pilulas(['Supermercado', 'Preço dos itens', 'Condições'],
                             [(mercado, brl(subtotal), condicoes or '—')
                              for _, subtotal, mercado, condicoes in visiveis],
-                            larguras="1.55fr 1fr 2.2fr"), unsafe_allow_html=True)
+                            larguras="1.55fr 1fr 2.2fr",
+                            renderizar_primeira=lambda mercado: _nome_mercado_com_faltantes(
+                                mercado, cotacoes[mercado], quantidades,
+                            )), unsafe_allow_html=True)
     else:
         st.info('Nenhum preço disponível para os produtos e mercados selecionados.')
 
@@ -573,6 +598,52 @@ def _mostrar_resultados_precos(cotacoes, quantidades, n_resultados, expandido, a
                     st.dataframe(pd.DataFrame([{'Consulta': k, 'Motivo': v} for k, v in faltantes.items()]),
                                  hide_index=True, use_container_width=True)
     return len(resumos)
+
+
+def _mostrar_comparacao(lojas, cotacoes, quantidades, ranking, veiculo, n_resultados, expandido):
+    linhas = []
+    elegiveis = set()
+    for r in ranking.to_dict('records'):
+        mercado = r['Estabelecimento']
+        elegiveis.add(mercado)
+        condicoes = r['Melhor modalidade']
+        if condicoes == 'Retirar' and any(
+            c.get('canal') == 'retirada online' for c in cotacoes[mercado].values()
+        ):
+            condicoes = 'Compra online com retirada'
+        entrega = '—'
+        if pd.notna(r['Custo entrega']):
+            entrega = 'Grátis' if r['Taxa entrega'] == 0 else brl(r['Taxa entrega'])
+        deslocamento = brl(r['Gasto deslocamento']) if pd.notna(r['Gasto deslocamento']) else '—'
+        linhas.append([
+            f"{esc(mercado)}<small>{esc(condicoes)}</small>",
+            esc(brl(r['Subtotal'])), esc(deslocamento), esc(entrega), esc(brl(r['Custo total'])),
+        ])
+
+    outros = []
+    for loja in lojas:
+        mercado = loja['nome']
+        if mercado in elegiveis:
+            continue
+        quantidade, subtotal, condicoes = _resumir_precos_mercado(cotacoes.get(mercado, {}), quantidades)
+        outros.append((quantidade, subtotal, mercado, condicoes))
+    for quantidade, subtotal, mercado, condicoes in sorted(outros, key=lambda r: (-r[0], r[1], r[2])):
+        if quantidade:
+            situacao = condicoes or 'Custo total indisponível'
+            preco_itens = brl(subtotal)
+        else:
+            situacao, preco_itens = 'Sem cotação para os itens selecionados', '—'
+        nome = _nome_mercado_com_faltantes(mercado, cotacoes.get(mercado, {}), quantidades, situacao)
+        linhas.append([nome, esc(preco_itens), '—', '—', '—'])
+
+    rotulo_desloc = 'Energia' if veiculo == 'eletrico' else 'Combustível'
+    st.markdown(tabela_comparacao(
+        ['Supermercado', 'Preço dos itens', rotulo_desloc, 'Entrega', 'Total econômico'],
+        linhas if expandido else linhas[:n_resultados], destacar_primeira=bool(elegiveis),
+    ), unsafe_allow_html=True)
+    if outros:
+        st.caption('O total econômico aparece para cestas completas que atendem às condições da loja.')
+    return len(linhas)
 
 
 # Catálogo editável em produtos.json. Sem qualquer preço de demonstração.
@@ -1426,7 +1497,7 @@ if modo_lista == MODO_AVULSO:
     quantidades, itens, versao = barra_quantidade("itens", "itens_versao", opcoes_itens,
                                                   "Escolha ou procure")
     if itens:
-        with caixa("alt_qtd"):
+        with caixa("alt_qtd_compra"):
             alterar_quantidade(itens, "itens_versao", versao, "av")
     if not catalogo:
         st.caption("💡 Monte o catálogo dos itens que a sua loja usa com frequência no ⚙ "
@@ -1449,7 +1520,7 @@ else:
         "Escolha suas receitas ou + Novo", opcao_novo="+ Novo")
 
     if meus_produtos:
-        with caixa("alt_qtd"):
+        with caixa("alt_qtd_produtos"):
             c_alt, c_apg, _ = st.columns([1.2, 1.2, 4])
             with c_alt:
                 if un_itens:
@@ -1491,7 +1562,7 @@ else:
             if novos_rec:
                 perguntar_insumo(novos_rec[0])
             if rec:
-                with caixa("alt_qtd"):
+                with caixa("alt_qtd_ingredientes"):
                     alterar_quantidade(rec, "rec_versao", rv, "rec")
             st.button("💾 Salvar receita", on_click=_salvar_produto_cb)
 
@@ -1630,7 +1701,9 @@ for l in lojas:
 
 carregador.empty()
 expandido = st.session_state.get("expandido", False)
-nomes_abas = ["Preços", "Distâncias", "Entrega", "Precificação", "Comparação"] if linhas else ["Preços"]
+df = pd.DataFrame(linhas)
+ranking = df.sort_values("Custo total").reset_index(drop=True) if linhas else df
+nomes_abas = ["Preços", "Distâncias", "Entrega", "Precificação", "Comparação"]
 painel = caixa("painel")
 with painel:
     abas = st.tabs(nomes_abas)
@@ -1638,25 +1711,68 @@ with painel:
         n_precos = _mostrar_resultados_precos(
             cotacoes_reais, quantidades, n_resultados, expandido, usuario_e_admin(),
         )
+    with abas[-1]:
+        n_comparacoes = _mostrar_comparacao(
+            lojas, cotacoes_reais, quantidades, ranking, veiculo, n_resultados, expandido,
+        )
 if lojas_abaixo_do_minimo:
     st.info('Os itens online da cesta ficaram abaixo do pedido mínimo em '
             + ', '.join(lojas_abaixo_do_minimo) + '.')
 if not linhas:
     st.session_state.pop("registrar", None)
+    with abas[1]:
+        if origem_coord is None:
+            st.info("Informe o endereço de origem nas Preferências para comparar distâncias.")
+        elif rotas:
+            viagens = sorted(rotas.items(), key=lambda par: (
+                math.isnan(par[1][0]), par[1][0],
+            ))
+            visiveis = viagens if expandido else viagens[:n_resultados]
+            st.markdown(pilulas(
+                ["Supermercado", "Distância"],
+                [(mercado, km_txt(rota[0])) for mercado, rota in visiveis],
+                larguras="1.8fr 1fr",
+            ), unsafe_allow_html=True)
+            st.caption(f"A partir de {origem_label}.")
+            if aviso_rotas:
+                st.warning(aviso_rotas)
+        else:
+            st.info("Nenhuma distância foi calculada para esta pesquisa.")
+    with abas[2]:
+        retirada_online = [
+            mercado for mercado, precos_loja in cotacoes_reais.items()
+            if any(c.get('canal') == 'retirada online' for c in precos_loja.values())
+        ]
+        if retirada_online:
+            st.info('Cotação para compra online com retirada em ' + ', '.join(retirada_online) + '.')
+        st.caption('Nenhum valor de entrega foi confirmado para esta cesta.')
+    with abas[3]:
+        custos_itens = [
+            (mercado, produto, brl(cotacao['valor']), brl(cotacao['valor'] * quantidades[produto]))
+            for mercado, precos_loja in cotacoes_reais.items()
+            for produto, cotacao in precos_loja.items() if produto in quantidades
+        ]
+        if custos_itens:
+            st.markdown(pilulas(
+                ["Supermercado", "Produto", "Preço unitário", "Custo dos itens"],
+                custos_itens, larguras="1.6fr 1.25fr 1fr 1fr",
+            ), unsafe_allow_html=True)
+            st.caption('Valores dos itens cotados. O custo total e a margem ficam disponíveis '
+                       'quando houver uma cesta que atenda às condições de compra.')
+        else:
+            st.info('Os custos aparecem aqui quando houver preços para os itens selecionados.')
     if modalidade == 'Receber por entrega':
         st.warning('Apenas entrega foi selecionada, mas não há taxas de entrega verificadas. '
                    'Altere a modalidade para Ambas ou Retirar na loja nas Preferências.')
     elif n_precos and not lojas_abaixo_do_minimo:
         st.info('Nenhuma das lojas selecionadas tem uma cesta completa para a modalidade escolhida. '
                 'Os preços encontrados aparecem na aba Preços.')
-    if n_precos > n_resultados:
+    if max(n_precos, n_comparacoes) > n_resultados:
         with caixa("expandir"):
             st.button("Recolher" if expandido else "Expandir", on_click=_alternar_expandir_cb,
                       key="btn_expandir")
     st.stop()
 
-df = pd.DataFrame(linhas)
-ranking = df.sort_values("Custo total").reset_index(drop=True)
 melhor = ranking.iloc[0]
 pior = df["Custo total"].max()
 loja_ref = next(l for l in LOJAS if l["nome"] == melhor["Estabelecimento"])
@@ -1799,22 +1915,12 @@ with painel:
 
     # ---- Comparação ----
     with abas[4]:
-        rotulo_desloc = "Energia" if veiculo == "eletrico" else "Combustível"
-        linhas_cmp = []
-        for _, r in ranking.head(limite).iterrows():
-            taxa_txt = ("Não verificado" if not r["Entrega?"]
-                        else ("Grátis" if r["Taxa entrega"] == 0 else brl_c(r["Taxa entrega"])))
-            desloc_txt = brl_c(r["Gasto deslocamento"]) if pd.notna(r["Gasto deslocamento"]) else "—"
-            linhas_cmp.append([
-                f"{esc(r['Estabelecimento'])}<small>{esc(r['Melhor modalidade'])}</small>",
-                esc(brl_c(r["Subtotal"])), esc(desloc_txt), esc(taxa_txt), esc(brl_c(r["Custo total"]))])
-        st.markdown(tabela_comparacao(
-            ["Supermercado", "Preço", rotulo_desloc, "Entrega", "Total econômico"], linhas_cmp),
-            unsafe_allow_html=True)
-
-        m1, m2 = st.columns(2)
-        m1.metric("Total (melhor opção)", brl(melhor["Custo total"]))
-        m2.metric("Economia vs. mais cara", brl(pior - melhor["Custo total"]))
+        if len(ranking) > 1:
+            m1, m2 = st.columns(2)
+            m1.metric("Total (melhor opção)", brl(melhor["Custo total"]))
+            m2.metric("Economia vs. mais cara", brl(pior - melhor["Custo total"]))
+        else:
+            st.metric("Total da cesta disponível", brl(melhor["Custo total"]))
 
         # ---------------- Recomendação de compras ----------------
         st.markdown("#### Recomendação de compras")
@@ -1893,7 +1999,7 @@ with painel:
         if st.checkbox("📊 Mostrar gráfico", value=False):
             st.bar_chart(ranking.head(limite).set_index("Estabelecimento")["Custo total"])
 
-if max(len(df), n_precos) > n_resultados:
+if max(n_precos, n_comparacoes) > n_resultados:
     with caixa("expandir"):
         st.button("Recolher" if expandido else "Expandir", on_click=_alternar_expandir_cb,
                   key="btn_expandir")

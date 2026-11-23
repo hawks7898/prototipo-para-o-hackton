@@ -82,7 +82,10 @@ def salvar_preco(email, mercado, produto, anuncio, valor, data_coleta, url='', c
     url = str(url or '').strip()[:800]
     comprovante = ' '.join(str(comprovante or '').split())[:350]
     if url:
-        parts = urlparse(url)
+        try:
+            parts = urlparse(url)
+        except ValueError as exc:
+            raise DadosInvalidos('O link da fonte deve ser HTTPS público.') from exc
         if parts.scheme != 'https' or not parts.hostname or parts.username or parts.password:
             raise DadosInvalidos('O link da fonte deve ser HTTPS público.')
     if not url and len(comprovante) < 10:

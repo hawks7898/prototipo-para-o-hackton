@@ -42,9 +42,9 @@
 .st-key-link_a button,.st-key-link_b button{border:none!important;background:none!important;padding:.1rem 0!important;
   text-decoration:underline;color:var(--txt)!important;justify-content:flex-start}
 .st-key-link_a button p,.st-key-link_b button p{font-size:.75rem}
-.st-key-alt_qtd [data-testid="stPopover"] button,.st-key-alt_qtd button{border:none!important;background:none!important;
+:is(.st-key-alt_qtd_compra,.st-key-alt_qtd_produtos,.st-key-alt_qtd_ingredientes) button{border:none!important;background:none!important;
   padding:.1rem 0!important;text-decoration:underline;color:var(--suave)!important}
-.st-key-alt_qtd button p{font-size:.74rem}
+:is(.st-key-alt_qtd_compra,.st-key-alt_qtd_produtos,.st-key-alt_qtd_ingredientes) button p{font-size:.74rem}
 
 /* barra superior e navegação em pílulas */
 .st-key-topbar{border-bottom:1px solid rgba(255,255,255,.7);padding-bottom:.8rem;margin-bottom:.4rem}
@@ -115,6 +115,9 @@
 .cmp tr.best td{border-top:1px solid var(--verm);border-bottom:1px solid var(--verm)}
 .cmp tr.best td:last-child{color:var(--verm)}
 .cmp small{display:block;color:var(--suave);font-size:.66rem;letter-spacing:.05em}
+.mercado-faltantes summary{cursor:pointer}
+.mercado-faltantes>div{margin-top:.4rem;text-transform:none;white-space:normal;overflow-wrap:anywhere}
+.mercado-faltantes ul{margin:.25rem 0 0;padding-left:1.25rem;text-align:left}
 
 /* carregamento com o ícone da marca */
 .loader{display:flex;align-items:center;gap:.9rem;margin:1.1rem 0 .4rem;text-transform:uppercase;font-size:1rem;letter-spacing:.02em}
@@ -574,6 +577,7 @@
   border-color:rgba(236,236,236,.55)!important;
   color:#d0d4d9!important;
 }
+.st-key-painel .pt>div:has(.mercado-faltantes[open]){border-radius:14px!important}
 
 /* Comparação: cinco colunas de cápsulas com primeiro mercado destacado. */
 .st-key-painel .cmp-wrap{
