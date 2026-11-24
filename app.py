@@ -127,7 +127,7 @@ def barra_quantidade(estado, chave_versao, opcoes, placeholder, rotulo="Produtos
     if opcao_novo is not None and opcao_novo not in opcoes_da_barra:
         opcoes_da_barra.append(opcao_novo)
 
-    c_sel, c_qtd = st.columns([5, 1.7])
+    c_sel, c_qtd = colunas([5, 1.7], centro=True)
     with c_sel:
         with caixa(f"faixa_sel_{estado}"):
             escolhidos = multiselect_sem_todos(
@@ -155,7 +155,7 @@ def barra_quantidade(estado, chave_versao, opcoes, placeholder, rotulo="Produtos
     with c_qtd:
         with caixa(f"cel_qtd_{estado}"):
             if novos:
-                c1, c2 = st.columns([3, 1.3])
+                c1, c2 = colunas([3, 1.3], centro=True)
                 qtd = c1.number_input(
                     "Quantidade", 1, 500, 1, 1,
                     key=f"qpend_{estado}_{versao}", label_visibility="collapsed",
@@ -324,13 +324,14 @@ def _slogan():
 
 
 def _tela_inicio():
-    st.markdown(
-        f"<div class='hero'>{logo_html(58)}"
-        "<div class='hero-t'>Ache sempre os<br><span>melhores preços!</span></div>"
-        "<div class='hero-s'>O seu buscador de preços com IA</div></div>", unsafe_allow_html=True)
-    c1, c2 = st.columns([1, 1])
-    c1.button("Criar conta", type="primary", on_click=_ir_tela_cb, args=("cadastro",), key="ini_criar")
-    c2.button("Fazer login", type="primary", on_click=_ir_tela_cb, args=("login",), key="ini_login")
+    with caixa("tela_inicio"):
+        st.markdown(
+            f"<div class='hero'>{logo_html()}"
+            "<h1 class='hero-t'>Ache sempre os<br><span>melhores preços!</span></h1>"
+            "<div class='hero-s'>O seu buscador de preços com IA</div></div>", unsafe_allow_html=True)
+        c1, c2 = st.columns([1, 1])
+        c1.button("Criar conta", type="primary", on_click=_ir_tela_cb, args=("cadastro",), key="ini_criar")
+        c2.button("Fazer login", type="primary", on_click=_ir_tela_cb, args=("login",), key="ini_login")
 
 
 def _tela_login():
@@ -1017,12 +1018,12 @@ def _salvar_catalogo_cb():
     st.session_state["msg_catalogo"] = "Catálogo salvo!"
 
 
-def _abrir_ajuda_cb():
-    st.session_state["ajuda"] = True
-    st.session_state["pagina"] = None
+def _alternar_ajuda_cb():
+    st.session_state["ajuda"] = not st.session_state.get("ajuda", False)
 
 
-def _sair_ajuda_cb():
+def _abrir_pagina_cb(pagina):
+    st.session_state["pagina"] = pagina
     st.session_state["ajuda"] = False
 
 
@@ -1436,26 +1437,27 @@ PAGINAS = [PAGINA_PESQUISA, PAGINA_PRODUTOS, PAGINA_HISTORICO]
 if usuario_e_admin():
     PAGINAS.append(PAGINA_ADMIN)
 st.session_state.setdefault("pagina", PAGINA_PESQUISA)
-if st.session_state["pagina"] not in PAGINAS:
-    st.session_state["pagina"] = PAGINA_PESQUISA
 ajuda_ativa = st.session_state.get("ajuda", False)
+if not ajuda_ativa and st.session_state["pagina"] not in PAGINAS:
+    st.session_state["pagina"] = PAGINA_PESQUISA
+pagina = st.session_state["pagina"]
 
 with caixa("topbar"):
     c_logo, c_nav, c_ajuda, c_cfg = colunas([1.5, 6.0, 0.85, 0.85], centro=True)
     c_logo.markdown(logo_html(), unsafe_allow_html=True)
     with c_nav:
         with caixa("nav"):
-            pagina = st.radio("Página", PAGINAS, index=None, horizontal=True, key="pagina",
-                              on_change=_sair_ajuda_cb, label_visibility="collapsed")
+            for opcao in PAGINAS:
+                st.button(opcao, key=f"nav_{opcao}",
+                          type="primary" if not ajuda_ativa and opcao == pagina else "secondary",
+                          on_click=_abrir_pagina_cb, args=(opcao,))
     with c_ajuda:
         with caixa("btn_ajuda_on" if ajuda_ativa else "btn_ajuda"):
-            st.button("?", key="btn_ajuda_b", on_click=_abrir_ajuda_cb, help="Como usar")
+            st.button("?", key="btn_ajuda_b", on_click=_alternar_ajuda_cb,
+                      help="Fechar ajuda" if ajuda_ativa else "Como usar")
     with c_cfg:
         with caixa("btn_cfg"):
             st.button("⚙", key="abrir_cfg", on_click=_pref_abrir, help="Preferências e conta")
-
-if pagina is None and not ajuda_ativa:
-    pagina = PAGINA_PESQUISA
 
 # ---------------- página: como usar ----------------
 if ajuda_ativa:
