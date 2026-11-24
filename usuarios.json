@@ -390,6 +390,20 @@
     "criado_em": "2026-11-21 08:57:14",
     "historico": [
       {
+        "data": "24/11/2026 12:07",
+        "tipo": "Minhas receitas",
+        "itens": {
+          "Macarrão 500 g": 1,
+          "Manteiga 200 g": 1,
+          "Arroz 5 kg": 1,
+          "Ovos 20 unidades": 1
+        },
+        "melhor": "Savegnago Supermercados",
+        "modalidade": "Retirar",
+        "custo": 49.91222545454546,
+        "origem_preco": "Catálogo oficial do Savegnago, Coleta manual"
+      },
+      {
         "data": "24/11/2026 10:27",
         "tipo": "Pesquisa",
         "itens": {
@@ -520,5 +534,337 @@
       "Feijão carioca 1 kg",
       "Óleo de soja 900 ml"
     ]
+  },
+  "dhghfghs@gmail.com": {
+    "salt": "29e38dacd13b87e2a46077ccf5e70234",
+    "hash": "b3ad3157b0efd85b57bc03e4b4d7cdcf401cf9b0f5e7e9287f9ac1014723002f",
+    "veiculo": "comum",
+    "criado_em": "2026-11-24 10:53:09"
+  },
+  "andrevaced@gmail.com": {
+    "salt": "5473fed2e3a997b1e4e3e3c3de90d173",
+    "hash": "1df49ef7b3a53c8342baf70c4b227c6be4059f5c5b4acf7c2ef4f6354dff86d0",
+    "criado_em": "2026-11-24 10:55:02"
+  },
+  "jonatasfonseca935@gmail.com": {
+    "salt": "09695cdf8d3c711dd7c7d5eda10d873c",
+    "hash": "5690a53c8142b226b4dcd7d79bb9102b09f0a0fad48d57b56d7f251c20d65cb2",
+    "criado_em": "2026-11-24 11:16:47",
+    "preferencias": {
+      "cep": "13401702",
+      "numero": "391",
+      "veiculo": "comum",
+      "multi_comum": true,
+      "preferidos": [
+        "Arena Atacado",
+        "Delta Supermercados — Dois Córregos",
+        "Supermercado Beira Rio",
+        "Savegnago Supermercados",
+        "Assaí Atacadista"
+      ]
+    },
+    "veiculo": "comum",
+    "catalogo": [
+      "Óleo de soja 900 ml",
+      "Açúcar 1 kg",
+      "Farinha de trigo 1 kg",
+      "Leite 1 L",
+      "Fermento em pó 100 g",
+      "Chocolate em pó 200 g",
+      "Manteiga 200 g",
+      "Ovos 20 unidades"
+    ],
+    "historico": [
+      {
+        "data": "24/11/2026 11:31",
+        "tipo": "Pesquisa",
+        "itens": {
+          "Ovos 20 unidades": 2,
+          "Manteiga 200 g": 1,
+          "Chocolate em pó 200 g": 1,
+          "Fermento em pó 100 g": 1,
+          "Leite 1 L": 3,
+          "Farinha de trigo 1 kg": 1,
+          "Açúcar 1 kg": 1,
+          "Óleo de soja 900 ml": 1,
+          "Feijão carioca 1 kg": 1,
+          "Café 500 g": 1
+        },
+        "melhor": "Assaí Atacadista",
+        "modalidade": "Retirar",
+        "custo": 109.83767636363636,
+        "origem_preco": "Coleta manual"
+      },
+      {
+        "data": "24/11/2026 11:31",
+        "tipo": "Pesquisa",
+        "itens": {
+          "Ovos 20 unidades": 2,
+          "Manteiga 200 g": 1,
+          "Chocolate em pó 200 g": 1,
+          "Fermento em pó 100 g": 1,
+          "Leite 1 L": 3,
+          "Farinha de trigo 1 kg": 1,
+          "Açúcar 1 kg": 1,
+          "Óleo de soja 900 ml": 1
+        },
+        "melhor": "Assaí Atacadista",
+        "modalidade": "Retirar",
+        "custo": 79.14767636363636,
+        "origem_preco": "Coleta manual"
+      },
+      {
+        "data": "24/11/2026 11:29",
+        "tipo": "Meus produtos",
+        "itens": {
+          "Fermento em pó 100 g": 1,
+          "Chocolate em pó 200 g": 1,
+          "Manteiga 200 g": 1,
+          "Ovos 20 unidades": 1,
+          "Leite 1 L": 1,
+          "Farinha de trigo 1 kg": 1,
+          "Açúcar 1 kg": 1,
+          "Óleo de soja 900 ml": 1
+        },
+        "melhor": "Assaí Atacadista",
+        "modalidade": "Retirar",
+        "custo": 56.26767636363637,
+        "origem_preco": "Coleta manual"
+      },
+      {
+        "data": "24/11/2026 11:24",
+        "tipo": "Pesquisa",
+        "itens": {
+          "Ovos 20 unidades": 2,
+          "Manteiga 200 g": 1,
+          "Chocolate em pó 200 g": 1,
+          "Fermento em pó 100 g": 1,
+          "Leite 1 L": 3,
+          "Farinha de trigo 1 kg": 1,
+          "Açúcar 1 kg": 1,
+          "Óleo de soja 900 ml": 1
+        },
+        "melhor": "Assaí Atacadista",
+        "modalidade": "Retirar",
+        "custo": 79.14767636363636,
+        "origem_preco": "Coleta manual"
+      }
+    ],
+    "produtos": {
+      "bolo de avelã": {
+        "rendimento": 5,
+        "insumos": {
+          "Fermento em pó 100 g": 1,
+          "Chocolate em pó 200 g": 1,
+          "Manteiga 200 g": 1,
+          "Ovos 20 unidades": 1,
+          "Leite 1 L": 1,
+          "Farinha de trigo 1 kg": 1,
+          "Açúcar 1 kg": 1,
+          "Óleo de soja 900 ml": 1
+        }
+      }
+    }
+  },
+  "cruzicaro79@gmail.com": {
+    "salt": "7a365598796e261bf16979fd4f9b3076",
+    "hash": "9295f3aa0abcec76b78461e032c8a4d76ff8ab68b7459b9e4b9f645ceca70ee0",
+    "criado_em": "2026-11-24 11:36:57",
+    "preferencias": {
+      "modalidade": "Receber por entrega",
+      "veiculo": "comum",
+      "combustivel": 6.2,
+      "consumo": 11.0,
+      "multi_comum": true
+    },
+    "veiculo": "comum",
+    "produtos": {
+      "Bolo simples (exemplo)": {
+        "rendimento": 10,
+        "insumos": {
+          "Farinha de trigo 1 kg": 3,
+          "Açúcar 1 kg": 2,
+          "Ovos (dúzia)": 3,
+          "Leite 1 L": 2,
+          "Óleo de soja 900 ml": 1,
+          "Fermento em pó 100 g": 2
+        }
+      }
+    }
+  },
+  "seuemail@gmail.com": {
+    "salt": "9595c2d3fe9a5c5ab7f7d7d48bba2416",
+    "hash": "9d1d7501169e68e7b1fe8b60d287621e2a6d3c0a68ee4fbe9882ed4a2d662537",
+    "criado_em": "2026-11-24 11:49:36",
+    "preferencias": {
+      "modalidade": "Ambas"
+    },
+    "historico": [
+      {
+        "data": "24/11/2026 11:56",
+        "tipo": "Pesquisa",
+        "itens": {
+          "Ovos 20 unidades": 1,
+          "Fermento em pó 100 g": 1,
+          "Farinha de trigo 1 kg": 1,
+          "Leite 1 L": 1,
+          "Chocolate em pó 200 g": 1
+        },
+        "melhor": "Assaí Atacadista",
+        "modalidade": "Retirar",
+        "custo": 34.637676363636366,
+        "origem_preco": "Coleta manual"
+      },
+      {
+        "data": "24/11/2026 11:56",
+        "tipo": "Pesquisa",
+        "itens": {
+          "Ovos 20 unidades": 1,
+          "Fermento em pó 100 g": 1,
+          "Farinha de trigo 1 kg": 1,
+          "Leite 1 L": 1,
+          "Chocolate em pó 200 g": 1
+        },
+        "melhor": "Assaí Atacadista",
+        "modalidade": "Retirar",
+        "custo": 34.637676363636366,
+        "origem_preco": "Coleta manual"
+      },
+      {
+        "data": "24/11/2026 11:53",
+        "tipo": "Meus produtos",
+        "itens": {
+          "Farinha de trigo 1 kg": 1,
+          "Açúcar 1 kg": 1,
+          "Leite 1 L": 1,
+          "Chocolate em pó 200 g": 1,
+          "Ovos 20 unidades": 1
+        },
+        "melhor": "Assaí Atacadista",
+        "modalidade": "Retirar",
+        "custo": 33.37767636363637,
+        "origem_preco": "Coleta manual"
+      },
+      {
+        "data": "24/11/2026 11:52",
+        "tipo": "Pesquisa",
+        "itens": {
+          "Ovos 20 unidades": 1,
+          "Fermento em pó 100 g": 1,
+          "Farinha de trigo 1 kg": 1,
+          "Leite 1 L": 1,
+          "Chocolate em pó 200 g": 1
+        },
+        "melhor": "Assaí Atacadista",
+        "modalidade": "Retirar",
+        "custo": 34.637676363636366,
+        "origem_preco": "Coleta manual"
+      },
+      {
+        "data": "24/11/2026 11:51",
+        "tipo": "Pesquisa",
+        "itens": {
+          "Óleo de soja 900 ml": 2,
+          "Leite 1 L": 5,
+          "Macarrão 500 g": 4
+        },
+        "melhor": "Savegnago Supermercados",
+        "modalidade": "Retirar",
+        "custo": 55.992225454545455,
+        "origem_preco": "Catálogo oficial do Savegnago"
+      },
+      {
+        "data": "24/11/2026 11:51",
+        "tipo": "Pesquisa",
+        "itens": {
+          "Óleo de soja 900 ml": 2,
+          "Leite 1 L": 5,
+          "Macarrão 500 g": 4
+        },
+        "melhor": "Savegnago Supermercados",
+        "modalidade": "Retirar",
+        "custo": 55.992225454545455,
+        "origem_preco": "Catálogo oficial do Savegnago"
+      },
+      {
+        "data": "24/11/2026 11:51",
+        "tipo": "Pesquisa",
+        "itens": {
+          "Óleo de soja 900 ml": 2,
+          "Leite 1 L": 5,
+          "Macarrão 500 g": 4
+        },
+        "melhor": "Savegnago Supermercados",
+        "modalidade": "Retirar",
+        "custo": 55.992225454545455,
+        "origem_preco": "Catálogo oficial do Savegnago"
+      },
+      {
+        "data": "24/11/2026 11:51",
+        "tipo": "Pesquisa",
+        "itens": {
+          "Óleo de soja 900 ml": 4,
+          "Leite 1 L": 4,
+          "Macarrão 500 g": 4
+        },
+        "melhor": "Savegnago Supermercados",
+        "modalidade": "Retirar",
+        "custo": 66.08222545454545,
+        "origem_preco": "Catálogo oficial do Savegnago"
+      },
+      {
+        "data": "24/11/2026 11:51",
+        "tipo": "Pesquisa",
+        "itens": {
+          "Óleo de soja 900 ml": 4,
+          "Leite 1 L": 4,
+          "Macarrão 500 g": 4
+        },
+        "melhor": "Savegnago Supermercados",
+        "modalidade": "Retirar",
+        "custo": 66.08222545454545,
+        "origem_preco": "Catálogo oficial do Savegnago"
+      },
+      {
+        "data": "24/11/2026 11:50",
+        "tipo": "Pesquisa",
+        "itens": {
+          "Óleo de soja 900 ml": 4,
+          "Leite 1 L": 4,
+          "Macarrão 500 g": 4,
+          "Arroz 5 kg": 4
+        },
+        "melhor": "Savegnago Supermercados",
+        "modalidade": "Retirar",
+        "custo": 132.08222545454547,
+        "origem_preco": "Catálogo oficial do Savegnago"
+      },
+      {
+        "data": "24/11/2026 11:50",
+        "tipo": "Pesquisa",
+        "itens": {
+          "Óleo de soja 900 ml": 4,
+          "Leite 1 L": 4,
+          "Macarrão 500 g": 4,
+          "Arroz 5 kg": 4
+        },
+        "melhor": "Savegnago Supermercados",
+        "modalidade": "Retirar",
+        "custo": 132.08222545454547,
+        "origem_preco": "Catálogo oficial do Savegnago"
+      }
+    ],
+    "produtos": {
+      "banana sem banana": {
+        "rendimento": 1,
+        "insumos": {
+          "Farinha de trigo 1 kg": 1,
+          "Açúcar 1 kg": 1,
+          "Leite 1 L": 1,
+          "Chocolate em pó 200 g": 1,
+          "Ovos 20 unidades": 1
+        }
+      }
+    }
   }
 }

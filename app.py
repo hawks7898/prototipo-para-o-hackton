@@ -187,7 +187,7 @@ MAX_TENTATIVAS = 5
 MODELO_CLAUDE = "claude-haiku-5-5"  # modelo usado para interpretar endereços
 VEICULOS = {"comum": "Carro comum", "eletrico": "Carro elétrico"}
 PAGINA_PESQUISA = "Pesquisa"
-PAGINA_PRODUTOS = "Meus produtos"
+PAGINA_PRODUTOS = "Minhas receitas"
 PAGINA_HISTORICO = "Histórico"
 
 
@@ -440,16 +440,12 @@ def _tela_cadastro():
                 reiniciar_cadastro()
                 st.rerun()
 
-        # Etapa 3: senha e veículo
+        # Etapa 3: senha
         elif c["etapa"] == 3:
             with st.form("form_cad_senha", border=False):
                 s1 = st.text_input("Senha", type="password", placeholder="Crie uma senha (mín. 6 caracteres)",
                                    key="cad_s1")
                 s2 = st.text_input("Repita a senha", type="password", placeholder="Repita a senha", key="cad_s2")
-                veiculo_novo = st.radio(
-                    "Que tipo de veículo você usa?", list(VEICULOS), format_func=VEICULOS.get,
-                    horizontal=True, key="cad_veiculo",
-                    help="Usado para calcular o gasto com deslocamento. Dá para mudar depois nas configurações.")
                 criar = st.form_submit_button("Criar conta", type="primary")
             if criar:
                 if c.get("email") == ADMIN_EMAIL and c.get("demo"):
@@ -462,7 +458,7 @@ def _tela_cadastro():
                 else:
                     usuarios = carregar_usuarios()
                     salt, h = hash_senha(s1)
-                    usuarios[c["email"]] = {"salt": salt, "hash": h, "veiculo": veiculo_novo,
+                    usuarios[c["email"]] = {"salt": salt, "hash": h,
                                             "criado_em": time.strftime("%Y-%m-%d %H:%M:%S")}
                     salvar_usuarios(usuarios)
                     _iniciar_sessao(c["email"], conta_nova=True)
@@ -728,7 +724,7 @@ LOJAS = [
 ]
 
 MODO_AVULSO = "Itens avulsos"
-MODO_FABRICAR = "Meus produtos"
+MODO_FABRICAR = PAGINA_PRODUTOS
 NOVO_PRODUTO = "➕ Novo produto"
 
 RECEITA_EXEMPLO = {
@@ -1001,6 +997,7 @@ def _salvar_produto_cb():
     receita = {
         "rendimento": int(st.session_state.get("novo_rend", 10)),
         "insumos": {i: int(q) for i, q in insumos.items()},
+        "lucro_pct": int(st.session_state.get("novo_lucro_pct", 30)),
     }
     salvar_produto(st.session_state.usuario, nome, receita)
     st.session_state["msg_produto"] = f"Produto '{nome}' salvo!"
@@ -1008,6 +1005,7 @@ def _salvar_produto_cb():
     st.session_state["rec_versao"] = st.session_state.get("rec_versao", 0) + 1
     st.session_state["novo_nome"] = ""
     st.session_state["novo_rend"] = 10
+    st.session_state["novo_lucro_pct"] = 30
     st.session_state["nova_receita_aberta"] = False
 
 
@@ -1121,7 +1119,11 @@ def _pref_fechar():
 
 
 def _sair_da_conta():
+    # Encerra a autenticação antes de limpar os demais dados da sessão.
+    st.session_state.pop("usuario", None)
     st.session_state.clear()
+    st.session_state["tela"] = "inicio"
+    st.rerun()
 
 
 def _pref_avancar():
@@ -1262,7 +1264,8 @@ def _tela_configuracoes(email, preferencias):
             _editar_conta(email)
         with direita, caixa("cfg_card_logout", border=True):
             st.markdown("### Sair da conta")
-            st.button("Sair da conta", key="cfg_logout", on_click=_sair_da_conta)
+            if st.button("Sair da conta", key="cfg_logout"):
+                _sair_da_conta()
 
 
 def _editar_lojas_preferidas(preferencias):
@@ -1382,7 +1385,8 @@ def _tela_preferencias(email):
                     _pref_titulo_card("Sua conta", "(PERFIL)")
                     st.caption("Usuário conectado")
                     st.write(email)
-                    st.button("Sair da conta", key="pref_logout", on_click=_sair_da_conta)
+                    if st.button("Sair da conta", key="pref_logout"):
+                        _sair_da_conta()
 
         # Um botão por lado: sem duplicar o avanço da etapa.
         rod_voltar, rod_rodape, rod_pular = st.columns([1.15, 5, 1.15], gap="small")
@@ -1635,7 +1639,7 @@ if pagina == PAGINA_HISTORICO:
     st.stop()
 
 # ------------------------------------------------------------------
-# PESQUISA / MEUS PRODUTOS: o que comprar
+# PESQUISA / MINHAS RECEITAS: o que comprar
 # ------------------------------------------------------------------
 modo_lista = MODO_FABRICAR if pagina == PAGINA_PRODUTOS else MODO_AVULSO
 quantidades, unidades_prod, meus_produtos = {}, {}, {}
@@ -1644,9 +1648,9 @@ favoritos = set(catalogo)
 
 if modo_lista == MODO_AVULSO:
     titulo("O que você precisa comprar hoje?")
-    c_rot, c_sld, _ = colunas([1.7, 2.6, 3.7], centro=True)
-    c_rot.markdown("<div class='rotulo'>Quantidade de resultados</div>", unsafe_allow_html=True)
-    n_resultados = c_sld.slider("Quantidade de resultados", 1, len(LOJAS), 3, key="n_res",
+    c_rot, c_sld, _ = colunas([1.05, 2.6, 6.35], centro=True)
+    c_rot.markdown("<div class='rotulo rotulo-opcoes'>Opções disponíveis</div>", unsafe_allow_html=True)
+    n_resultados = c_sld.slider("Opções disponíveis", 1, len(LOJAS), 3, key="n_res",
                                 label_visibility="collapsed")
 
     opcoes_itens = catalogo + [p for p in PRODUTOS if p not in favoritos]
@@ -1659,7 +1663,7 @@ if modo_lista == MODO_AVULSO:
         st.caption("💡 Monte o catálogo dos itens que a sua loja usa com frequência no ⚙ "
                    "e eles aparecem primeiro nesta lista.")
 else:
-    titulo("Seus produtos em um só lugar!")
+    titulo("Suas receitas em um só lugar!")
     n_resultados = st.session_state.get("n_res", 3)
 
     if "erro_produto" in st.session_state:
@@ -1701,6 +1705,9 @@ else:
             st.text_input("Nome do produto", key="novo_nome", placeholder="Ex: Bolo de cenoura")
             st.number_input("Quantas unidades essa receita rende?", 1, 10000, 10, 1, key="novo_rend",
                             help="Ex.: se a receita completa rende 10 bolos, digite 10.")
+            st.number_input("Lucro desejado sobre o custo (%)", 0, 200, 30, 1, key="novo_lucro_pct",
+                            help="Ex.: se uma unidade custa R$ 10 e o lucro desejado é 30%, "
+                                 "o preço de venda sugerido é R$ 13.")
             _, rec, rv = barra_quantidade(
                 "rec_itens", "rec_versao", list(PRODUTOS), "Escolha ou pesquise",
                 rotulo="Ingredientes da receita", favoritos=favoritos,
@@ -1916,7 +1923,7 @@ loja_ref = next(l for l in LOJAS if l["nome"] == melhor["Estabelecimento"])
 if st.session_state.pop("registrar", False):
     adicionar_historico(usuario_atual, {
         "data": time.strftime("%d/%m/%Y %H:%M"),
-        "tipo": "Meus produtos" if modo_lista == MODO_FABRICAR else "Pesquisa",
+        "tipo": modo_lista if modo_lista == MODO_FABRICAR else "Pesquisa",
         "itens": {k: int(v) for k, v in quantidades.items()},
         "melhor": melhor["Estabelecimento"],
         "modalidade": melhor["Melhor modalidade"],
@@ -1972,13 +1979,12 @@ with painel:
     # ---- Precificação ----
     with abas[3]:
         # Recomenda receitas cadastradas pelo próprio usuário usando a compra atual.
-        # Não modifica os valores nem a precificação existente.
         receitas_salvas = obter_produtos(usuario_atual)
         receitas_possiveis, receitas_pendentes = avaliar_receitas_para_compra(
             receitas_salvas, quantidades)
         st.markdown("#### 🍳 Receitas que você pode preparar")
         if not receitas_salvas:
-            st.caption("Você ainda não tem receitas salvas. Crie uma na aba Meus Produtos.")
+            st.caption("Você ainda não tem receitas salvas. Crie uma na aba Minhas receitas.")
         elif receitas_possiveis:
             dados_receitas = []
             for nome_receita, unidades, insumos in receitas_possiveis:
@@ -2016,33 +2022,34 @@ with painel:
                           for n in unidades_prod}
             usado_total = sum(insumos_un[n] * unidades_prod[n] for n in unidades_prod)
 
-            margem = st.slider("Margem de lucro (%)", 0, 200, 30)
-
             linhas_p = []
             for n, un in unidades_prod.items():
                 rateio = logistica * (insumos_un[n] * un / usado_total) / un if usado_total else 0
                 custo_un = insumos_un[n] + rateio
-                venda = custo_un * (1 + margem / 100)
+                lucro_pct = (receitas_salvas[n].get("lucro_pct", 30)
+                             if "insumos" in receitas_salvas[n] else 30)
+                venda = custo_un * (1 + lucro_pct / 100)
                 linhas_p.append({"Produto": n, "Unidades": un, "Insumos/un": insumos_un[n],
                                  "Logística/un": rateio, "Custo/un": custo_un,
-                                 "Preço de venda": venda, "Lucro/un": venda - custo_un})
+                                 "Preço de venda/un": venda, "Lucro/un": venda - custo_un,
+                                 "Lucro sobre custo": f"{lucro_pct}%"})
             dp = pd.DataFrame(linhas_p)
 
             st.markdown(pilulas(["Meu produto", "Custo"],
                                 [(r["Produto"], brl_c(r["Custo/un"])) for r in linhas_p],
                                 larguras="1.8fr 1fr"), unsafe_allow_html=True)
-            st.caption(f"Custo por unidade. Preço de venda sugerido, com margem de {margem}%:")
-            st.markdown(pilulas(["Meu produto", "Preço de venda"],
-                                [(r["Produto"], brl_c(r["Preço de venda"])) for r in linhas_p],
-                                larguras="1.8fr 1fr"), unsafe_allow_html=True)
+            st.markdown(pilulas(["Receita", "Lucro sobre custo", "Preço de venda / unidade"],
+                                [(r["Produto"], r["Lucro sobre custo"], brl_c(r["Preço de venda/un"]))
+                                 for r in linhas_p],
+                                larguras="1.8fr 1fr 1.4fr"), unsafe_allow_html=True)
             c1, c2 = st.columns(2)
             c1.metric("Custo total da produção", brl(sum(r["Custo/un"] * r["Unidades"] for r in linhas_p)))
-            c2.metric("Receita estimada", brl(sum(r["Preço de venda"] * r["Unidades"] for r in linhas_p)))
+            c2.metric("Receita estimada", brl(sum(r["Preço de venda/un"] * r["Unidades"] for r in linhas_p)))
             with st.expander("Ver detalhes por unidade"):
                 st.caption("Sobras de embalagem não entram no custo; o gasto com deslocamento/entrega "
                            "é dividido entre os produtos.")
                 st.dataframe(dp.assign(**{c: dp[c].map(brl) for c in
-                                          ["Insumos/un", "Logística/un", "Custo/un", "Preço de venda", "Lucro/un"]}),
+                                          ["Insumos/un", "Logística/un", "Custo/un", "Preço de venda/un", "Lucro/un"]}),
                              hide_index=True, use_container_width=True)
         else:
             st.markdown(pilulas(["Meu produto", "Custo"],

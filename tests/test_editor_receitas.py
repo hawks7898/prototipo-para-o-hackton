@@ -22,7 +22,7 @@ def test_editor_de_receita_e_produtos_salvos_tem_controles_independentes(monkeyp
     monkeypatch.setattr(Path, 'read_text', ler_com_conta_simulada)
     app = AppTest.from_file(str(arquivo_app))
     app.session_state['usuario'] = email
-    app.session_state['pagina'] = 'Meus produtos'
+    app.session_state['pagina'] = 'Minhas receitas'
     app.session_state['un_prod'] = {'Receita salva': 1}
     app.session_state['nova_receita_aberta'] = True
     app.session_state['rec_itens'] = {ingrediente: 1}
