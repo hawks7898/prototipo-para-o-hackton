@@ -49,6 +49,7 @@ CSS_CLARO = """
   background-attachment:fixed;
 }
 .stApp .logo-img{filter:brightness(0) opacity(.85)}
+.stApp .st-key-logo_pesquisa button::before{filter:brightness(0) opacity(.85)}
 .stApp :is([data-testid="stMarkdownContainer"],[data-testid="stWidgetLabel"],[data-testid="stCaptionContainer"],
              [data-testid="stExpander"] summary,[data-baseweb="tab"],[data-baseweb="select"],
              .pref-heading,.pref-card-title,.pref-card-sub,.pref-nota,.pref-footer){
@@ -79,17 +80,21 @@ def aplicar_estilo(fundo="app"):
     claro = st.session_state.get("tema_claro", False)
     tema = CSS_CLARO if claro else FUNDO_GRADIENTE
     acesso = CSS_ACESSO if fundo == "hero" else ""
-    css = "\n".join(l for l in (CSS_BASE + acesso + tema).splitlines() if l.strip())
+    logo = f'.stApp{{--logo-buscai:url("{_url_logo()}")}}' if fundo == "app" else ""
+    css = "\n".join(l for l in (CSS_BASE + acesso + tema + logo).splitlines() if l.strip())
     st.markdown("<style>" + css + "</style>", unsafe_allow_html=True)
     st.button("Modo escuro" if claro else "Modo claro", key="alternar_tema", on_click=_alternar_tema)
 
 
-def logo_html(altura=None):
-    """Usa o logo.png ao lado do app.py quando presente e a imagem padrão nos demais casos."""
-    estilo = f" style='height:{altura}px'" if altura else ""
+def _url_logo():
     arq = DIRETORIO_APP / "logo.png"
     dados = base64.b64encode(arq.read_bytes()).decode() if arq.exists() else LOGO_B64
-    return f"<img class='logo-img'{estilo} alt='Buscaí' src='data:image/png;base64,{dados}'/>"
+    return f"data:image/png;base64,{dados}"
+
+
+def logo_html(altura=None):
+    estilo = f" style='height:{altura}px'" if altura else ""
+    return f"<img class='logo-img'{estilo} alt='Buscaí' src='{_url_logo()}'/>"
 
 
 def icone_html():

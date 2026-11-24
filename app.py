@@ -113,7 +113,8 @@ def tabela_comparacao(cabecalhos, linhas, *, destacar_primeira):
     return f"<div class='cmp-wrap'><table class='cmp'><thead><tr>{cab}</tr></thead><tbody>{corpo}</tbody></table></div>"
 
 
-def barra_quantidade(estado, chave_versao, opcoes, placeholder, rotulo="Produtos", opcao_novo=None):
+def barra_quantidade(estado, chave_versao, opcoes, placeholder, rotulo="Produtos", opcao_novo=None,
+                     *, favoritos=()):
     """Barra no estilo do protótipo: escolher um item abre o seletor de quantidade na célula da direita
     e, depois de confirmar, o item aparece como NOME(qtd). Retorna (quantidades, itens, versao)."""
     itens = st.session_state.setdefault(estado, {})
@@ -127,12 +128,17 @@ def barra_quantidade(estado, chave_versao, opcoes, placeholder, rotulo="Produtos
     if opcao_novo is not None and opcao_novo not in opcoes_da_barra:
         opcoes_da_barra.append(opcao_novo)
 
+    def rotulo_item(produto):
+        estrela = "★ " if produto in favoritos else ""
+        quantidade = f"({itens[produto]})" if produto in itens else ""
+        return f"{estrela}{produto}{quantidade}"
+
     c_sel, c_qtd = colunas([5, 1.7], centro=True)
     with c_sel:
         with caixa(f"faixa_sel_{estado}"):
             escolhidos = multiselect_sem_todos(
                 rotulo, opcoes_da_barra, default=list(itens), key=f"{estado}_sel_{versao}",
-                format_func=lambda p: f"{p}({itens[p]})" if p in itens else p,
+                format_func=rotulo_item,
                 placeholder=placeholder, label_visibility="collapsed")
 
     # Clicar em '+ Novo' abre o editor; não pede quantidade para essa opção.
@@ -318,6 +324,12 @@ def _ir_tela_cb(nome):
         reiniciar_cadastro()
 
 
+def _iniciar_sessao(email, *, conta_nova=False):
+    st.session_state.usuario = email
+    st.session_state["preferencias_abertas"] = conta_nova
+    st.session_state["cfg_etapa"] = 1
+
+
 def _slogan():
     st.markdown("<div class='slogan-box'><div class='slogan'>Não compre por hábito.<br>"
                 "<span>Compre com inteligência.</span></div></div>", unsafe_allow_html=True)
@@ -335,17 +347,20 @@ def _tela_inicio():
 
 
 def _tela_login():
-    esq, dir_ = st.columns([1.15, 1])
+    esq, dir_ = colunas([1.15, 1], centro=True)
     with esq:
         st.markdown(logo_html(), unsafe_allow_html=True)
         st.markdown("<div class='form-titulo'>Entre na sua conta</div>", unsafe_allow_html=True)
-        email = st.text_input("E-mail", placeholder="Digite seu endereço de e-mail", key="login_email").strip().lower()
-        senha = st.text_input("Senha", type="password", placeholder="Digite sua senha", key="login_senha")
-        if st.button("Entrar", type="primary"):
+        with st.form("form_login", border=False):
+            email = st.text_input("E-mail", placeholder="Digite seu endereço de e-mail",
+                                  key="login_email").strip().lower()
+            senha = st.text_input("Senha", type="password", placeholder="Digite sua senha", key="login_senha")
+            entrar = st.form_submit_button("Entrar", type="primary")
+        if entrar:
             usuarios = carregar_usuarios()
             u = usuarios.get(email)
             if u and hash_senha(senha, u["salt"])[1] == u["hash"]:
-                st.session_state.usuario = email
+                _iniciar_sessao(email)
                 st.rerun()
             else:
                 st.error("E-mail ou senha incorretos.")
@@ -354,7 +369,8 @@ def _tela_login():
         with caixa("link_b"):
             st.button("← Voltar ao início", on_click=_ir_tela_cb, args=("inicio",), key="login_p_ini")
     with dir_:
-        _slogan()
+        with caixa("login_slogan"):
+            _slogan()
 
 
 def _tela_cadastro():
@@ -368,9 +384,11 @@ def _tela_cadastro():
 
         # Etapa 1: e-mail
         if c["etapa"] == 1:
-            email = st.text_input("E-mail", placeholder="Digite seu endereço de e-mail",
-                                  key="cad_email").strip().lower()
-            if st.button("Enviar código", type="primary"):
+            with st.form("form_cad_email", border=False):
+                email = st.text_input("E-mail", placeholder="Digite seu endereço de e-mail",
+                                      key="cad_email").strip().lower()
+                enviar = st.form_submit_button("Enviar código", type="primary")
+            if enviar:
                 if not email_valido(email):
                     st.error("Digite um e-mail válido.")
                 elif email in carregar_usuarios():
@@ -403,10 +421,11 @@ def _tela_cadastro():
             if c["demo"]:
                 st.info(f"🧪 Modo demonstração: o e-mail não foi enviado porque o SMTP não está "
                         f"configurado. Seu código é **{c['codigo']}**.")
-            digitado = st.text_input("Código de 6 dígitos", max_chars=6, placeholder="Digite o código",
-                                     key="cad_codigo").strip()
-            col1, col2 = st.columns(2)
-            if col1.button("Verificar", type="primary"):
+            with st.form("form_cad_codigo", border=False):
+                digitado = st.text_input("Código de 6 dígitos", max_chars=6, placeholder="Digite o código",
+                                         key="cad_codigo").strip()
+                verificar = st.form_submit_button("Verificar", type="primary")
+            if verificar:
                 if time.time() > c["expira"]:
                     st.error("Código expirado. Volte e peça outro.")
                 elif c["tentativas"] >= MAX_TENTATIVAS:
@@ -417,20 +436,22 @@ def _tela_cadastro():
                 else:
                     c["tentativas"] += 1
                     st.error(f"Código incorreto ({c['tentativas']}/{MAX_TENTATIVAS}).")
-            if col2.button("← Voltar"):
+            if st.button("← Voltar"):
                 reiniciar_cadastro()
                 st.rerun()
 
         # Etapa 3: senha e veículo
         elif c["etapa"] == 3:
-            s1 = st.text_input("Senha", type="password", placeholder="Crie uma senha (mín. 6 caracteres)",
-                               key="cad_s1")
-            s2 = st.text_input("Repita a senha", type="password", placeholder="Repita a senha", key="cad_s2")
-            veiculo_novo = st.radio(
-                "Que tipo de veículo você usa?", list(VEICULOS), format_func=VEICULOS.get,
-                horizontal=True, key="cad_veiculo",
-                help="Usado para calcular o gasto com deslocamento. Dá para mudar depois nas preferências.")
-            if st.button("Criar conta", type="primary"):
+            with st.form("form_cad_senha", border=False):
+                s1 = st.text_input("Senha", type="password", placeholder="Crie uma senha (mín. 6 caracteres)",
+                                   key="cad_s1")
+                s2 = st.text_input("Repita a senha", type="password", placeholder="Repita a senha", key="cad_s2")
+                veiculo_novo = st.radio(
+                    "Que tipo de veículo você usa?", list(VEICULOS), format_func=VEICULOS.get,
+                    horizontal=True, key="cad_veiculo",
+                    help="Usado para calcular o gasto com deslocamento. Dá para mudar depois nas configurações.")
+                criar = st.form_submit_button("Criar conta", type="primary")
+            if criar:
                 if c.get("email") == ADMIN_EMAIL and c.get("demo"):
                     st.error("A conta administrativa exige confirmação de e-mail "
                              "ou provisionamento pelo terminal do servidor.")
@@ -444,7 +465,7 @@ def _tela_cadastro():
                     usuarios[c["email"]] = {"salt": salt, "hash": h, "veiculo": veiculo_novo,
                                             "criado_em": time.strftime("%Y-%m-%d %H:%M:%S")}
                     salvar_usuarios(usuarios)
-                    st.session_state.usuario = c["email"]
+                    _iniciar_sessao(c["email"], conta_nova=True)
                     reiniciar_cadastro()
                     st.rerun()
 
@@ -1019,10 +1040,12 @@ def _salvar_catalogo_cb():
 
 
 def _alternar_ajuda_cb():
+    st.session_state["cfg_aberta"] = False
     st.session_state["ajuda"] = not st.session_state.get("ajuda", False)
 
 
 def _abrir_pagina_cb(pagina):
+    st.session_state["cfg_aberta"] = False
     st.session_state["pagina"] = pagina
     st.session_state["ajuda"] = False
 
@@ -1071,6 +1094,8 @@ def _prefs_usuario(email):
             "combustivel": 6.20, "consumo": 11.0,
             "multi_comum": False, "multi_eletrico": True,
         }
+        conta = carregar_usuarios().get(email, {})
+        st.session_state["pref_dados"].update(conta.get("preferencias", {}))
     return st.session_state["pref_dados"]
 
 
@@ -1078,19 +1103,25 @@ def _pref_sync(campo):
     """Guarda o widget fora da árvore atual para não perder valor entre etapas."""
     valor = st.session_state.get("cfg_" + campo)
     st.session_state["pref_dados"][campo] = valor
+    usuarios = carregar_usuarios()
+    conta = usuarios[st.session_state.usuario]
+    conta.setdefault("preferencias", {})[campo] = valor
     if campo == "veiculo":
-        salvar_veiculo(st.session_state.usuario, valor)
+        conta["veiculo"] = valor
+    salvar_usuarios(usuarios)
 
 
-def _pref_abrir():
-    st.session_state["cfg_pagina_anterior"] = st.session_state.get("pagina", PAGINA_PESQUISA)
-    st.session_state["cfg_aberta"] = True
-    st.session_state["cfg_etapa"] = 1
+def _alternar_configuracoes():
+    st.session_state["cfg_aberta"] = not st.session_state.get("cfg_aberta", False)
+    st.session_state["ajuda"] = False
 
 
 def _pref_fechar():
-    st.session_state["cfg_aberta"] = False
-    st.session_state["pagina"] = st.session_state.get("cfg_pagina_anterior", PAGINA_PESQUISA)
+    st.session_state["preferencias_abertas"] = False
+
+
+def _sair_da_conta():
+    st.session_state.clear()
 
 
 def _pref_avancar():
@@ -1132,6 +1163,126 @@ def _pref_titulo_card(titulo_card, descricao="(OPCIONAL)", obrigatorio=False):
     classe = "pref-card-sub req" if obrigatorio else "pref-card-sub"
     st.markdown(f"<div class='pref-card-title'>{esc(titulo_card)}</div>"
                 f"<div class='{classe}'>{esc(descricao)}</div>", unsafe_allow_html=True)
+
+
+def _editar_conta(email):
+    conta = carregar_usuarios()[email]
+    st.caption(f"E-mail da conta: {email}")
+    with st.expander("Alterar nome ou senha"):
+        with st.form("editar_conta", clear_on_submit=True, border=False):
+            nome = st.text_input("Nome", value=conta.get("nome", "")).strip()
+            atual = st.text_input("Senha atual", type="password")
+            nova = st.text_input("Nova senha (opcional)", type="password")
+            confirmar = st.text_input("Confirmar nova senha", type="password")
+            salvar = st.form_submit_button("Salvar informações", type="primary")
+    if not salvar:
+        return
+    usuarios = carregar_usuarios()
+    conta = usuarios[email]
+    if not secrets.compare_digest(hash_senha(atual, conta["salt"])[1], conta["hash"]):
+        st.error("A senha atual está incorreta.")
+        return
+    if (nova or confirmar) and (len(nova) < 6 or nova != confirmar):
+        st.error("A nova senha deve ter pelo menos 6 caracteres e coincidir com a confirmação.")
+        return
+    conta["nome"] = nome
+    if nova:
+        conta["salt"], conta["hash"] = hash_senha(nova)
+    salvar_usuarios(usuarios)
+    st.success("Informações da conta salvas.")
+
+
+def _secao_configuracoes(nome):
+    st.markdown(f"<h2 class='cfg-secao'>{esc(nome)}</h2>", unsafe_allow_html=True)
+
+
+def _tela_configuracoes(email, preferencias):
+    with caixa("configuracoes"):
+        st.markdown("<h1 class='cfg-titulo'>Configurações</h1>", unsafe_allow_html=True)
+        _secao_configuracoes("Localização")
+        esquerda, direita = st.columns(2, gap="medium")
+        with esquerda, caixa("cfg_card_local", border=True):
+            st.markdown("### Localização")
+            _pref_selecionar("Cidade", "cidade", ["Piracicaba"])
+            with st.popover("Ajustar origem do trajeto"):
+                _pref_selecionar("Bairro", "bairro", list(BAIRROS))
+                _pref_selecionar("Origem para o trajeto", "modo_origem",
+                                ["Bairro", "Endereço completo", "Não informar"])
+        with direita:
+            with caixa("cfg_card_endereco", border=True):
+                st.markdown("### Endereço")
+                with st.expander("Editar endereço"):
+                    _pref_texto("CEP", "cep", placeholder="DIGITE")
+                    _pref_texto("Número", "numero", placeholder="DIGITE")
+                    _pref_texto("Rua / avenida", "rua", placeholder="DIGITE")
+            st.caption("Os dados de endereço são usados apenas para o cálculo de trajetos.")
+
+        _secao_configuracoes("Compras")
+        with caixa("cfg_compras"):
+            esquerda, meio, direita = st.columns(3, gap="medium")
+            with esquerda:
+                st.markdown("### Modalidade da compra")
+                _pref_selecionar("Modalidade da compra", "modalidade",
+                                ["Receber por entrega", "Retirar na loja", "Ambas"],
+                                label_visibility="collapsed")
+            with meio:
+                st.markdown("### Estabelecimentos preferenciais")
+                _editar_lojas_preferidas(preferencias)
+            with direita:
+                st.markdown("### Catálogo")
+                _editar_catalogo(email)
+
+        _secao_configuracoes("Deslocamento")
+        esquerda, meio, direita = st.columns(3, gap="medium")
+        with esquerda, caixa("cfg_card_veiculo", border=True):
+            st.markdown("### Tipo do carro")
+            _pref_selecionar("Tipo do carro", "veiculo", list(VEICULOS),
+                            format_func=VEICULOS.get, label_visibility="collapsed")
+            campo = "multi_eletrico" if preferencias["veiculo"] == "eletrico" else "multi_comum"
+            st.checkbox("Combinar mercados próximos", value=preferencias[campo],
+                        key="cfg_" + campo, on_change=_pref_sync, args=(campo,))
+        eletrico = preferencias["veiculo"] == "eletrico"
+        with meio, caixa("cfg_card_consumo", border=True):
+            st.markdown("### Consumo do veículo")
+            if eletrico:
+                _pref_numero("Consumo (km/kWh)", "consumo_ev", 1.0, 15.0, 0.5)
+            else:
+                _pref_numero("Consumo (km/L)", "consumo", 3.0, 30.0, 0.5)
+        with direita, caixa("cfg_card_preco", border=True):
+            st.markdown("### Preço da energia" if eletrico else "### Preço da gasolina usada")
+            if eletrico:
+                _pref_numero("Preço da energia (R$/kWh)", "preco_energia", 0.10, 10.0, 0.05)
+            else:
+                _pref_numero("Preço da gasolina (R$/L)", "combustivel", 3.0, 10.0, 0.10)
+
+        _secao_configuracoes("Conta")
+        esquerda, direita = st.columns(2, gap="medium")
+        with esquerda, caixa("cfg_card_editar_conta", border=True):
+            st.markdown("### Alterar informações")
+            _editar_conta(email)
+        with direita, caixa("cfg_card_logout", border=True):
+            st.markdown("### Sair da conta")
+            st.button("Sair da conta", key="cfg_logout", on_click=_sair_da_conta)
+
+
+def _editar_lojas_preferidas(preferencias):
+    opcoes = [loja["nome"] for loja in LOJAS]
+    multiselect_sem_todos("Estabelecimentos preferenciais", opcoes,
+                          default=[nome for nome in preferencias["preferidos"] if nome in opcoes],
+                          key="cfg_preferidos", on_change=_pref_sync,
+                          args=("preferidos",), placeholder="SELECIONE", label_visibility="collapsed")
+    st.caption("Deixe vazio para incluir todos os mercados.")
+
+
+def _editar_catalogo(email):
+    st.caption("Seus produtos frequentes aparecem primeiro na pesquisa.")
+    if "msg_catalogo" in st.session_state:
+        st.success(st.session_state.pop("msg_catalogo"))
+    salvo = [p for p in obter_catalogo(email) if p in PRODUTOS]
+    multiselect_sem_todos("Itens do catálogo", list(PRODUTOS), default=salvo,
+                          key="catalogo_sel", placeholder="SELECIONE")
+    st.button("💾 Salvar catálogo", type="primary", key="cfg_salvar_cat",
+              on_click=_salvar_catalogo_cb)
 
 
 def _tela_preferencias(email):
@@ -1221,32 +1372,17 @@ def _tela_preferencias(email):
             with esquerda:
                 with caixa("pref_card_lojas", border=True):
                     _pref_titulo_card("Mercados")
-                    multiselect_sem_todos("Estabelecimentos preferenciais",
-                                          [loja["nome"] for loja in LOJAS],
-                                          default=[p for p in preferencias["preferidos"]
-                                                   if p in [loja["nome"] for loja in LOJAS]],
-                                          key="cfg_preferidos", on_change=_pref_sync,
-                                          args=("preferidos",), placeholder="SELECIONE")
-                    st.caption("Deixe vazio para incluir todos os mercados.")
+                    _editar_lojas_preferidas(preferencias)
             with meio:
                 with caixa("pref_card_catalogo", border=True):
                     _pref_titulo_card("Catálogo")
-                    st.caption("Seus produtos frequentes aparecem primeiro na pesquisa.")
-                    if "msg_catalogo" in st.session_state:
-                        st.success(st.session_state.pop("msg_catalogo"))
-                    salvo = [p for p in obter_catalogo(email) if p in PRODUTOS]
-                    multiselect_sem_todos("Itens do catálogo", list(PRODUTOS), default=salvo,
-                                          key="catalogo_sel", placeholder="SELECIONE")
-                    st.button("💾 Salvar catálogo", type="primary", key="cfg_salvar_cat",
-                              on_click=_salvar_catalogo_cb)
+                    _editar_catalogo(email)
             with direita:
                 with caixa("pref_card_conta", border=True):
                     _pref_titulo_card("Sua conta", "(PERFIL)")
                     st.caption("Usuário conectado")
                     st.write(email)
-                    if st.button("Sair da conta", key="cfg_logout"):
-                        st.session_state.clear()
-                        st.rerun()
+                    st.button("Sair da conta", key="pref_logout", on_click=_sair_da_conta)
 
         # Um botão por lado: sem duplicar o avanço da etapa.
         rod_voltar, rod_rodape, rod_pular = st.columns([1.15, 5, 1.15], gap="small")
@@ -1254,8 +1390,8 @@ def _tela_preferencias(email):
             with caixa("pref_btn_voltar"):
                 st.button("‹ VOLTAR", key="cfg_voltar", on_click=_pref_voltar)
         with rod_rodape:
-            st.markdown("<div class='pref-footer'>Essas opções podem ser modificadas "
-                        "<span>depois</span></div>", unsafe_allow_html=True)
+            st.markdown("<div class='pref-footer'>As preferências são salvas na sua conta.</div>",
+                        unsafe_allow_html=True)
         with rod_pular:
             with caixa("pref_btn_pular"):
                 st.button("PULAR ❯" if etapa < 3 else "CONCLUIR ❯", key="cfg_pular",
@@ -1267,11 +1403,11 @@ def _tela_preferencias(email):
 # ------------------------------------------------------------------
 usuario_atual = st.session_state.usuario
 preferencias = _prefs_usuario(usuario_atual)
-configuracoes_abertas = st.session_state.get("cfg_aberta", False)
-aplicar_estilo("preferencias" if configuracoes_abertas else "app")
-if configuracoes_abertas:
+aplicar_estilo()
+if st.session_state.get("preferencias_abertas", False):
     _tela_preferencias(usuario_atual)
     st.stop()
+configuracoes_abertas = st.session_state.get("cfg_aberta", False)
 
 # Os mesmos valores alimentam os cálculos da pesquisa (fora da tela de preferências).
 modalidade = preferencias["modalidade"]
@@ -1286,7 +1422,7 @@ modo_origem = preferencias["modo_origem"]
 if modo_origem == "Bairro":
     bairro = preferencias["bairro"]
     origem_coord, origem_label = BAIRROS[bairro], bairro
-elif modo_origem == "Endereço completo":
+elif modo_origem == "Endereço completo" and not configuracoes_abertas:
     origem_coord, origem_label = BAIRROS["Centro"], "Centro (padrão)"
     cep = preferencias["cep"].strip()
     numero = preferencias["numero"].strip()
@@ -1304,7 +1440,7 @@ elif modo_origem == "Endereço completo":
             origem_coord, origem_label = achado[:2], padrao
         else:
             st.warning("Não encontrei o endereço configurado. Usando o Centro como origem. "
-                       "Você pode corrigir o endereço nas Preferências.")
+                       "Você pode corrigir o endereço nas Configurações.")
 
 def _painel_admin_precos():
     """Painel restrito à sessão autenticada com o e-mail do administrador."""
@@ -1444,12 +1580,14 @@ pagina = st.session_state["pagina"]
 
 with caixa("topbar"):
     c_logo, c_nav, c_ajuda, c_cfg = colunas([1.5, 6.0, 0.85, 0.85], centro=True)
-    c_logo.markdown(logo_html(), unsafe_allow_html=True)
+    c_logo.button("Buscaí — voltar à Pesquisa", key="logo_pesquisa",
+                  on_click=_abrir_pagina_cb, args=(PAGINA_PESQUISA,))
     with c_nav:
         with caixa("nav"):
             for opcao in PAGINAS:
                 st.button(opcao, key=f"nav_{opcao}",
-                          type="primary" if not ajuda_ativa and opcao == pagina else "secondary",
+                          type="primary" if not (ajuda_ativa or configuracoes_abertas)
+                          and opcao == pagina else "secondary",
                           on_click=_abrir_pagina_cb, args=(opcao,))
     with c_ajuda:
         with caixa("btn_ajuda_on" if ajuda_ativa else "btn_ajuda"):
@@ -1457,7 +1595,12 @@ with caixa("topbar"):
                       help="Fechar ajuda" if ajuda_ativa else "Como usar")
     with c_cfg:
         with caixa("btn_cfg"):
-            st.button("⚙", key="abrir_cfg", on_click=_pref_abrir, help="Preferências e conta")
+            st.button("⚙", key="abrir_cfg", on_click=_alternar_configuracoes,
+                      help="Fechar configurações" if configuracoes_abertas else "Configurações")
+
+if configuracoes_abertas:
+    _tela_configuracoes(usuario_atual, preferencias)
+    st.stop()
 
 # ---------------- página: como usar ----------------
 if ajuda_ativa:
@@ -1496,6 +1639,8 @@ if pagina == PAGINA_HISTORICO:
 # ------------------------------------------------------------------
 modo_lista = MODO_FABRICAR if pagina == PAGINA_PRODUTOS else MODO_AVULSO
 quantidades, unidades_prod, meus_produtos = {}, {}, {}
+catalogo = [p for p in obter_catalogo(usuario_atual) if p in PRODUTOS]
+favoritos = set(catalogo)
 
 if modo_lista == MODO_AVULSO:
     titulo("O que você precisa comprar hoje?")
@@ -1504,10 +1649,9 @@ if modo_lista == MODO_AVULSO:
     n_resultados = c_sld.slider("Quantidade de resultados", 1, len(LOJAS), 3, key="n_res",
                                 label_visibility="collapsed")
 
-    catalogo = [p for p in obter_catalogo(usuario_atual) if p in PRODUTOS]
-    opcoes_itens = catalogo + [p for p in PRODUTOS if p not in catalogo]
+    opcoes_itens = catalogo + [p for p in PRODUTOS if p not in favoritos]
     quantidades, itens, versao = barra_quantidade("itens", "itens_versao", opcoes_itens,
-                                                  "Escolha ou procure")
+                                                  "Escolha ou procure", favoritos=favoritos)
     if itens:
         with caixa("alt_qtd_compra"):
             alterar_quantidade(itens, "itens_versao", versao, "av")
@@ -1559,7 +1703,7 @@ else:
                             help="Ex.: se a receita completa rende 10 bolos, digite 10.")
             _, rec, rv = barra_quantidade(
                 "rec_itens", "rec_versao", list(PRODUTOS), "Escolha ou pesquise",
-                rotulo="Ingredientes da receita",
+                rotulo="Ingredientes da receita", favoritos=favoritos,
             )
             if rec:
                 with caixa("alt_qtd_ingredientes"):

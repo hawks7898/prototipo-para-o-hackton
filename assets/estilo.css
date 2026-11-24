@@ -22,6 +22,33 @@
 
 /* logo */
 .logo-img{height:34px;display:block}
+.stApp .st-key-logo_pesquisa,
+.stApp .st-key-logo_pesquisa [data-testid="stButton"]{
+  width:100%!important;
+}
+.stApp .st-key-logo_pesquisa button[kind="secondary"]{
+  position:relative;
+  width:min(100%,10.2rem)!important;
+  height:clamp(2.25rem,4vw,3rem);
+  min-height:0;
+  background:none;
+  border:0;
+  padding:0;
+}
+.st-key-logo_pesquisa button::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  background:var(--logo-buscai) left center / contain no-repeat;
+}
+.stApp .st-key-logo_pesquisa button p{
+  position:absolute;
+  width:1px;
+  height:1px;
+  overflow:hidden;
+  clip-path:inset(50%);
+}
+.st-key-logo_pesquisa button:focus-visible{outline:2px solid var(--verm2);outline-offset:3px}
 .logo-pill{display:inline-block;background:#cfd4dc;color:#1d1d1f;border-radius:999px;padding:.28rem 1.5rem;font-weight:600}
 
 /* botões */
@@ -47,6 +74,48 @@
   color:var(--txt);
   min-height:2.25rem;
   padding:.25rem .8rem;
+}
+.st-key-configuracoes{
+  padding:clamp(.5rem,2.5vw,2rem) 0 4rem;
+}
+.stApp .cfg-titulo{
+  color:var(--titulo);
+  text-align:center;
+  font-size:clamp(2rem,4.3vw,4rem);
+  padding:0;
+}
+.stApp .cfg-secao{
+  color:var(--titulo);
+  font-size:clamp(1.35rem,2.8vw,2.6rem);
+  margin-top:clamp(.75rem,2.5vw,2rem);
+  padding:0 0 .35rem;
+  border-bottom:2px solid var(--verm);
+}
+.stApp .st-key-configuracoes [class*="st-key-cfg_card_"],
+.stApp .st-key-cfg_compras [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]{
+  border:1px solid var(--linha);
+  border-radius:clamp(1.2rem,3vw,2.5rem);
+  padding:clamp(.9rem,2.5vw,2rem);
+}
+.stApp .st-key-cfg_compras [data-testid="stHorizontalBlock"]{align-items:stretch}
+.stApp .st-key-configuracoes h3{
+  color:var(--titulo);
+  font-size:clamp(1.03rem,1.85vw,1.65rem);
+  padding:0;
+}
+.stApp .st-key-configuracoes [data-testid="stTextInput"] [data-baseweb="input"],
+.stApp .st-key-configuracoes [data-baseweb="select"] > div{
+  background:var(--celula)!important;
+  color:var(--txt);
+}
+.stApp .st-key-configuracoes [data-testid="stTextInput"] input{
+  color:var(--txt)!important;
+}
+.stApp .st-key-configuracoes input::placeholder{color:var(--suave)!important}
+.stApp:has(.st-key-configuracoes) .st-key-btn_cfg button p{color:var(--verm2)!important}
+@media (max-width:700px){
+  .st-key-configuracoes [data-testid="stHorizontalBlock"]{flex-direction:column}
+  .st-key-configuracoes [data-testid="stColumn"]{width:100%!important;flex:auto!important}
 }
 .st-key-area_pesquisar [data-testid="stElementContainer"],.st-key-area_pesquisar [data-testid="stButton"],
 .st-key-area_pesquisar button{width:100%!important}
@@ -210,6 +279,7 @@
 .hero-s{font-size:clamp(.9rem,min(2.4vw,4.2svh),1.8rem);line-height:1.2;color:var(--titulo);margin-top:.25rem}
 .form-titulo{color:var(--verm);font-size:1.7rem;text-transform:uppercase;margin:2.6rem 0 1rem}
 .slogan-box{display:flex;align-items:center;justify-content:center;min-height:52vh}
+.st-key-login_slogan .slogan-box{min-height:0}
 .slogan{font-size:clamp(1.3rem,2.6vw,2rem);text-transform:uppercase;text-align:center;line-height:1.2;color:var(--titulo)}
 
 /* Refinamento de interface: proporções e escala do protótipo em vídeo. */

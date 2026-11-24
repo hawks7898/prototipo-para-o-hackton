@@ -18,6 +18,30 @@
     },
     "historico": [
       {
+        "data": "24/11/2026 10:15",
+        "tipo": "Pesquisa",
+        "itens": {
+          "Óleo de soja 900 ml": 1,
+          "Arroz 5 kg": 1,
+          "Feijão carioca 1 kg": 1
+        },
+        "melhor": "Savegnago Supermercados",
+        "modalidade": "Retirar",
+        "custo": 34.342225454545456,
+        "origem_preco": "Catálogo oficial do Savegnago"
+      },
+      {
+        "data": "24/11/2026 10:10",
+        "tipo": "Pesquisa",
+        "itens": {
+          "Arroz 5 kg": 1
+        },
+        "melhor": "Savegnago Supermercados",
+        "modalidade": "Retirar",
+        "custo": 29.06222545454545,
+        "origem_preco": "Coleta manual"
+      },
+      {
         "data": "24/11/2026 07:42",
         "tipo": "Pesquisa",
         "itens": {
@@ -341,28 +365,6 @@
         "modalidade": "Retirar",
         "custo": 54.962225454545454,
         "origem_preco": "PreçoMelhor: catálogo de filial (validar data e preço no caixa)"
-      },
-      {
-        "data": "22/11/2026 09:53",
-        "tipo": "Pesquisa",
-        "itens": {
-          "Arroz 5 kg": 2
-        },
-        "melhor": "Savegnago Supermercados",
-        "modalidade": "Retirar",
-        "custo": 54.962225454545454,
-        "origem_preco": "PreçoMelhor: catálogo de filial (validar data e preço no caixa)"
-      },
-      {
-        "data": "22/11/2026 09:52",
-        "tipo": "Pesquisa",
-        "itens": {
-          "Arroz 5 kg": 2
-        },
-        "melhor": "Savegnago Supermercados",
-        "modalidade": "Retirar",
-        "custo": 54.962225454545454,
-        "origem_preco": "PreçoMelhor: catálogo de filial (validar data e preço no caixa)"
       }
     ],
     "catalogo": [
@@ -387,6 +389,53 @@
     "veiculo": "comum",
     "criado_em": "2026-11-21 08:57:14",
     "historico": [
+      {
+        "data": "24/11/2026 10:27",
+        "tipo": "Pesquisa",
+        "itens": {
+          "Açúcar 1 kg": 3
+        },
+        "melhor": "Assaí Atacadista",
+        "modalidade": "Retirar",
+        "custo": 13.487676363636364,
+        "origem_preco": "Coleta manual"
+      },
+      {
+        "data": "24/11/2026 10:14",
+        "tipo": "Pesquisa",
+        "itens": {
+          "Arroz 5 kg": 1
+        },
+        "melhor": "Savegnago Supermercados",
+        "modalidade": "Retirar",
+        "custo": 29.06222545454545,
+        "origem_preco": "Coleta manual"
+      },
+      {
+        "data": "24/11/2026 10:09",
+        "tipo": "Pesquisa",
+        "itens": {
+          "Arroz 5 kg": 1
+        },
+        "melhor": "Savegnago Supermercados",
+        "modalidade": "Retirar",
+        "custo": 29.06222545454545,
+        "origem_preco": "Coleta manual"
+      },
+      {
+        "data": "24/11/2026 10:09",
+        "tipo": "Pesquisa",
+        "itens": {
+          "Açúcar 1 kg": 1,
+          "Óleo de soja 900 ml": 1,
+          "Macarrão 500 g": 1,
+          "Feijão carioca 1 kg": 3
+        },
+        "melhor": "Assaí Atacadista",
+        "modalidade": "Retirar",
+        "custo": 44.95767636363637,
+        "origem_preco": "Coleta manual"
+      },
       {
         "data": "24/11/2026 07:39",
         "tipo": "Pesquisa",
@@ -449,6 +498,27 @@
       "Arroz 5 kg",
       "Açúcar 1 kg",
       "Macarrão 500 g"
+    ],
+    "preferencias_apresentadas": true
+  },
+  "miglsj111@gmail.com": {
+    "salt": "5f0e400ab7caa851cf323780b5481b55",
+    "hash": "fba9f5916c98f30c682306c7987eb47991732838b6d0f4efb7edbb33393753a5",
+    "veiculo": "comum",
+    "criado_em": "2026-11-24 09:23:29",
+    "preferencias_apresentadas": true,
+    "preferencias": {
+      "cep": "13402578",
+      "numero": "310",
+      "multi_comum": true,
+      "preferidos": [
+        "Supermercado Beira Rio"
+      ]
+    },
+    "catalogo": [
+      "Arroz 5 kg",
+      "Feijão carioca 1 kg",
+      "Óleo de soja 900 ml"
     ]
   }
 }
